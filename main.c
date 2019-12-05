@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <getopt.h>
 #include <termios.h>
@@ -16,6 +17,7 @@
 
 //#define SERVPORT 3333
 #define MAXDATASIZE 100 /*max client */
+#define BACKLOG 10 /* max client */
 #define FALSE 1
 #define TRUE 0
 
@@ -39,6 +41,7 @@ void set_speed(int fd, int speed);
 void print_usage();
 
 
+#if 0
 /**
  *	TCP客户端
  */
@@ -107,7 +110,10 @@ int main(int argc, char *argv[])
 		{
 			bufReceive[recvbytes] = '\0';
 			if (write(uartfd, bufReceive, strlen(bufReceive)) == -1)
-				perror("write error！");
+			{
+				printf("write error！\r\n");
+				exit(1);
+			}
 			printf("socket receivr, usart send: %s\r\n", bufReceive);
 		}
 
@@ -116,7 +122,10 @@ int main(int argc, char *argv[])
 		{
 			bufSend[nread] = '\0';
 			if (send(sockfd, bufSend, strlen(bufSend), 0) == -1)
-				perror("send error！");
+			{
+				printf("send error！\r\n");
+				exit(1);
+			}
 			printf("usart receivr, socket send: %s\r\n", bufSend);
 		}
 	}
@@ -124,6 +133,108 @@ int main(int argc, char *argv[])
 	close(uartfd);
 	return 0;
 }
+
+#else
+
+/**
+ *	TCP服务器
+ */
+int main (int argc, char *argv[])
+{
+	int uartfd, sockfd, client_fd, recvbytes;
+	struct sockaddr_in my_addr; /* loacl */
+	struct sockaddr_in remote_addr;
+	char bufReceive[MAXDATASIZE];
+	char bufSend[MAXDATASIZE];
+	socklen_t sin_size;
+	int servport = 3333;
+	char device[] = "/dev/ttymxc1";
+	int nread;			/* Read the counts of data */
+	int flags;
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+	{
+		perror("socket fail！"); exit(1);
+	}
+
+	my_addr.sin_family=AF_INET;
+	my_addr.sin_port=htons(servport);
+	my_addr.sin_addr.s_addr = INADDR_ANY;
+	bzero(&(my_addr.sin_zero),8);
+
+	if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr)) == -1)
+	{
+		perror("bind error！");
+		exit(1);
+	}
+	if (listen(sockfd, BACKLOG) == -1) {
+		perror("listen error！");
+		exit(1);
+	}
+
+	uartfd = OpenDev(device);
+	if (uartfd > 0)
+	{
+		set_speed(uartfd, 115200);
+	} else
+	{
+		fprintf(stderr, "Error opening %s: %s\n", device, strerror(errno));
+		exit(1);
+	}
+
+	if (set_Parity(uartfd, 8, 1, 'N') == FALSE)
+	{
+		fprintf(stderr, "Set Parity Error\n");
+		close(uartfd);
+		exit(1);
+	}
+
+	sin_size = sizeof(struct sockaddr_in);
+	client_fd = accept(sockfd, (struct sockaddr *)&remote_addr, &sin_size);
+	if (client_fd == -1)
+	{
+		perror("accept error");
+	}
+	else
+	{
+		printf("REC FROM： %s\n", inet_ntoa(remote_addr.sin_addr));
+		flags = fcntl(client_fd, F_GETFL, 0);				//获取原始client_fd属性
+		fcntl(client_fd, F_SETFL, flags | O_NONBLOCK);		//添加非阻塞
+	}
+
+	while(1)
+	{
+		recvbytes = recv(client_fd, bufReceive, MAXDATASIZE, 0);
+		if (recvbytes > 0)
+		{
+			bufReceive[recvbytes] = '\0';
+			if (write(uartfd, bufReceive, strlen(bufReceive)) == -1)
+			{
+				printf("write error！\r\n");
+				exit(1);
+			}
+			printf("client_fd receivr, usart send: %s\r\n", bufReceive);
+		}
+
+		nread = read(uartfd, bufSend, sizeof(bufSend));
+		if (nread > 0)
+		{
+			bufSend[nread] = '\0';
+			if (send(client_fd, bufSend, strlen(bufSend), 0) == -1)
+			{
+				printf("send error！\r\n");
+				exit(1);
+			}
+			printf("usart receivr, client_fd send: %s\r\n", bufSend);
+		}
+	}
+	close(client_fd);
+	close(sockfd);
+	close(uartfd);
+	return 0;
+}
+
+#endif
 
 
 /**
