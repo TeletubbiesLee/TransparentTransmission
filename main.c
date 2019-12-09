@@ -134,7 +134,6 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-#else
 
 /**
  *	TCP服务器
@@ -231,6 +230,97 @@ int main (int argc, char *argv[])
 	close(client_fd);
 	close(sockfd);
 	close(uartfd);
+	return 0;
+}
+
+#else
+
+/**
+ *	UDP
+ */
+int main(int argc, char *argv[])
+{
+	int uartfd, sockfd, recvbytes;
+	struct sockaddr_in my_addr; /* loacl */
+	struct sockaddr_in remote_addr;
+	char bufReceive[MAXDATASIZE];
+	char bufSend[MAXDATASIZE];
+	socklen_t sin_size;
+	int servport = 3333;
+	char device[] = "/dev/ttymxc1";
+	int nread;			/* Read the counts of data */
+	int flags;
+
+	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+	{
+		perror("socket fail！"); exit(1);
+	}
+
+	my_addr.sin_family=AF_INET;
+	my_addr.sin_port=htons(servport);
+	my_addr.sin_addr.s_addr = INADDR_ANY;
+
+	remote_addr.sin_family=AF_INET;
+	remote_addr.sin_port=htons(servport);
+	remote_addr.sin_addr.s_addr = inet_addr("192.168.10.11");
+
+	bzero(&(my_addr.sin_zero),8);
+
+	if (bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr)) == -1)
+	{
+		perror("bind error！");
+		exit(1);
+	}
+
+	uartfd = OpenDev(device);
+	if (uartfd > 0)
+	{
+		set_speed(uartfd, 115200);
+	} else
+	{
+		fprintf(stderr, "Error opening %s: %s\n", device, strerror(errno));
+		exit(1);
+	}
+
+	if (set_Parity(uartfd, 8, 1, 'N') == FALSE)
+	{
+		fprintf(stderr, "Set Parity Error\n");
+		close(uartfd);
+		exit(1);
+	}
+
+	flags = fcntl(sockfd, F_GETFL, 0);				//获取原始sockfd属性
+	fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);		//添加非阻塞
+
+	while(1)
+	{
+		recvbytes = recvfrom(sockfd, bufReceive, sizeof(bufReceive)-1, 0, (struct sockaddr *)&remote_addr, &sin_size);
+		if(recvbytes > 0)
+		{
+			bufReceive[recvbytes] = '\0';
+			if (write(uartfd, bufReceive, strlen(bufReceive)) == -1)
+			{
+				printf("write error！\r\n");
+				exit(1);
+			}
+			printf("sockfd receivr, usart send: %s\r\n", bufReceive);
+
+		}
+
+		nread = read(uartfd, bufSend, sizeof(bufSend));
+		if (nread > 0)
+		{
+			bufSend[nread] = '\0';
+			if (sendto(sockfd, bufSend, strlen(bufSend), 0, (struct sockaddr *)&remote_addr, sizeof(remote_addr)) == -1)
+			{
+				printf("send error！\r\n");
+				exit(1);
+			}
+			printf("usart receivr, sockfd send: %s\r\n", bufSend);
+		}
+	}
+
+	close(sockfd);
 	return 0;
 }
 
