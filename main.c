@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 	}
 	if((host = gethostbyname(argv[1])) == NULL)
 	{
-		herror("gethostbyname error！");
+		perror("gethostbyname error！");
 		exit(1);
 	}
 	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
