@@ -134,6 +134,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+#elif 0
 
 /**
  *	TCP服务器
