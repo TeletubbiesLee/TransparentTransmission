@@ -12,8 +12,9 @@
 #ifndef _NET_H_
 #define _NET_H_
 
-#define SERVER_PORT 3333
-#define REMOTE_IP_ADDRESS "192.168.1.1"
+#define SERVER_PORT         3333
+#define REMOTE_IP_ADDRESS   "192.168.1.1"
+#define MAX_DATA_SIZE       100 /*max client */
 
 int TCP_NetConnect(int serverPort, char *ipAddress);
 int TCP_NetListen(int serverPort);

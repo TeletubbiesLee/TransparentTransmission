@@ -108,7 +108,6 @@ int TCP_NetAccept(int sockfd)
 	else
 	{
 		printf("REC FROM： %s\n", inet_ntoa(remoteAddr.sin_addr));
-		SetNetNonBlock(clientfd);
 	}
 
     return clientfd;
