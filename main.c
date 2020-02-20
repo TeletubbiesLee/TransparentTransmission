@@ -8,7 +8,7 @@
 // #include <sys/types.h>
 // #include <sys/stat.h>
 // #include <sys/ioctl.h>
-// #include <netinet/in.h>
+// 
 // #include <arpa/inet.h>
 // #include <sys/socket.h>
 // #include <getopt.h>
@@ -18,8 +18,6 @@
 #include "Net.h"
 #include "Pthread.h"
 #include <pthread.h>
-
-
 
 
 #define BACKLOG 10 /* max client */
@@ -46,17 +44,17 @@ int TCP_Client2Uart(char *ipAddress)
 	if(0 != ret)
 	{
 		printf("pthread Net2Uart create error!\n");
-		goto CLOSE;
+		goto TCP_CLIENT_CLOSE;
 	}
 
 	ret = pthread_create(&uart2NetPid, NULL, (void*)Uart2Net, fdArray);
 	if(0 != ret)
 	{
 		printf("pthread Uart2Net create error!\n");
-		goto CLOSE;
+		goto TCP_CLIENT_CLOSE;
 	}
 
-CLOSE:
+TCP_CLIENT_CLOSE:
 	pthread_join(net2UartPid);
 	pthread_join(uart2NetPid);
 	close(sockfd);
@@ -88,17 +86,17 @@ int TCP_Server2Uart(void)
 	if(0 != ret)
 	{
 		printf("pthread Net2Uart create error!\n");
-		goto CLOSE;
+		goto TCP_SERVER_CLOSE;
 	}
 
 	ret = pthread_create(&uart2NetPid, NULL, (void*)Uart2Net, fdArray);
 	if(0 != ret)
 	{
 		printf("pthread Uart2Net create error!\n");
-		goto CLOSE;
+		goto TCP_SERVER_CLOSE;
 	}
 
-CLOSE:
+TCP_SERVER_CLOSE:
 	pthread_join(net2UartPid);
 	pthread_join(uart2NetPid);
 	close(clientfd);
@@ -115,49 +113,34 @@ CLOSE:
 int UDP2Uart(void)
 {
 	int uartfd, sockfd;
-	int recvbytes;
-	struct sockaddr_in remoteAddr;
-	char bufReceive[MAX_DATA_SIZE];
-	char bufSend[MAX_DATA_SIZE];
-	socklen_t sin_size;
-	int nread;			/* Read the counts of data */
-
-	remoteAddr.sin_family = AF_INET;
-	remoteAddr.sin_port = htons(SERVER_PORT);
-	remoteAddr.sin_addr.s_addr = inet_addr(REMOTE_IP_ADDRESS);
+	int fdArray[2] = {0};	//存放网络socket和串口的描述符
+	pthread_t udp2UartPid, uart2UdpPid;		//网口与串口转换的线程ID号
+	int ret = -1;
 
 	sockfd = UDP_NetConnect(SERVER_PORT, REMOTE_IP_ADDRESS);		//连接网口
 	uartfd = UartInit(UART_DEVICE_NAME, UART_BANDRATE);		//打开串口
-	SetNetNonBlock(sockfd);			//设置网口非阻塞
 
-	while(1)
+	fdArray[0] = sockfd;
+	fdArray[1] = uartfd;
+
+	/* 常见网口与串口透传的线程 */
+	ret = pthread_create(&udp2UartPid, NULL, (void*)UDP2Uart, fdArray);
+	if(0 != ret)
 	{
-		recvbytes = recvfrom(sockfd, bufReceive, sizeof(bufReceive)-1, 0, (struct sockaddr *)&remote_addr, &sin_size);
-		if(recvbytes > 0)
-		{
-			bufReceive[recvbytes] = '\0';
-			if (write(uartfd, bufReceive, strlen(bufReceive)) == -1)
-			{
-				printf("write error！\r\n");
-				exit(1);
-			}
-			printf("sockfd receivr, usart send: %s\r\n", bufReceive);
-
-		}
-
-		nread = read(uartfd, bufSend, sizeof(bufSend));
-		if (nread > 0)
-		{
-			bufSend[nread] = '\0';
-			if (sendto(sockfd, bufSend, strlen(bufSend), 0, (struct sockaddr *)&remote_addr, sizeof(remote_addr)) == -1)
-			{
-				printf("send error！\r\n");
-				exit(1);
-			}
-			printf("usart receivr, sockfd send: %s\r\n", bufSend);
-		}
+		printf("pthread UDP2Uart create error!\n");
+		goto UDP_CLOSE;
 	}
 
+	ret = pthread_create(&uart2UdpPid, NULL, (void*)Uart2UDP, fdArray);
+	if(0 != ret)
+	{
+		printf("pthread Uart2UDP create error!\n");
+		goto UDP_CLOSE;
+	}
+
+UDP_CLOSE:
+	pthread_join(udp2UartPid);
+	pthread_join(uart2UdpPid);
 	close(sockfd);
 	close(uartfd);
 

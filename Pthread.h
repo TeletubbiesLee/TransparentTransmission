@@ -14,5 +14,8 @@
 
 void Net2Uart(void *param);
 void Uart2Net(void *param);
+void UDP2Uart(void *param);
+void Uart2UDP(void *param);
+
 
 #endif

@@ -11,6 +11,7 @@
 
 #include "Pthread.h"
 #include "Net.h"
+#include <netinet/in.h>
 
 
 /**
@@ -70,4 +71,78 @@ void Uart2Net(void *param)
         }
         sleep(1);
     }
+}
+
+
+/**
+ * @breif 网口UDP转发到串口的线程程序
+ * @param param 整型数组，第一个数存放网络socket描述符，第二个数存放串口描述符
+ * @return 设备文件描述符或-1
+ */
+void UDP2Uart(void *param)
+{
+    int uartfd, sockfd;
+    int recvBytes;
+    struct sockaddr_in remoteAddr;
+	char bufReceive[MAX_DATA_SIZE] = {0};
+    socklen_t sinSize;
+
+    sockfd = ((int*)param)[0];
+    uartfd = ((int*)param)[1];
+
+    remoteAddr.sin_family = AF_INET;
+	remoteAddr.sin_port = htons(SERVER_PORT);
+	remoteAddr.sin_addr.s_addr = inet_addr(REMOTE_IP_ADDRESS);
+
+    while(1)
+    {
+        recvBytes = recvfrom(sockfd, bufReceive, sizeof(bufReceive)-1, 0, (struct sockaddr *)&remoteAddr, &sinSize);
+        if(recvBytes > 0)
+        {
+            if (write(uartfd, bufReceive, strlen(bufReceive)) == -1)
+            {
+                printf("write error！\r\n");
+                exit(1);
+            }
+            printf("sockfd receivr, usart send: %s\r\n", bufReceive);
+        sleep(1);
+        }
+    }
+    
+}
+
+
+/**
+ * @breif 串口接口转发到网口UDP的线程程序
+ * @param param 整型数组，第一个数存放网络socket描述符，第二个数存放串口描述符
+ * @return 设备文件描述符或-1
+ */
+void Uart2UDP(void *param)
+{
+    int uartfd, sockfd;
+    char bufSend[MAX_DATA_SIZE] = {0};
+	int nread = 0;
+    struct sockaddr_in remoteAddr;
+
+    sockfd = ((int*)param)[0];
+    uartfd = ((int*)param)[1];
+
+    remoteAddr.sin_family = AF_INET;
+	remoteAddr.sin_port = htons(SERVER_PORT);
+	remoteAddr.sin_addr.s_addr = inet_addr(REMOTE_IP_ADDRESS);
+
+    while(1)
+	{
+		nread = read(uartfd, bufSend, sizeof(bufSend));
+		if (nread > 0)
+		{
+			if (sendto(sockfd, bufSend, strlen(bufSend), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) == -1)
+			{
+				printf("send error！\r\n");
+				exit(1);
+			}
+			printf("usart receivr, sockfd send: %s\r\n", bufSend);
+		}
+        sleep(1);
+	}
 }
