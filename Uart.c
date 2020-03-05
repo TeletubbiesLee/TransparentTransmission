@@ -9,6 +9,13 @@
  * @version ver 1.0
  */
 
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <termios.h>
 #include "Uart.h"
 
 
@@ -32,18 +39,18 @@ int UartInit(char *device, int bandrate)
 {
 	int uartfd = -1;
 
-	uartfd = OpenDev(device);
+	uartfd = OpenDevice(device);
 	if (uartfd > 0)
 	{
-		set_speed(uartfd, bandrate);
+		SetSpeed(uartfd, bandrate);
 	}
 	else
 	{
-		printf("Error opening %s: %s\n", device, strerror(errno));
+		printf("Error opening %s\n", device);
 		return -1;
 	}
 
-	if (set_Parity(uartfd, UART_DATA_BITS, UART_STOP_BITS, UART_PARITY) == 1)
+	if (SetParity(uartfd, UART_DATA_BITS, UART_STOP_BITS, UART_PARITY) == 1)
 	{
 		printf("Set Parity Error\n");
 		close(uartfd);
@@ -64,7 +71,7 @@ int OpenDevice(char *dev)
 	int fd = open(dev, O_RDWR | O_NONBLOCK);         //| O_NOCTTY | O_NDELAY
  	if (-1 == fd)
     {
-   		printf("Can't Open Serial Port: %s.\r\n", *dev);
+   		printf("Can't Open Serial Port: %s.\n", dev);
    		return -1;
 	}
     else
@@ -97,7 +104,7 @@ void SetSpeed(int fd, int speed)
 			status = tcsetattr(fd, TCSANOW, &opt);
 			if(status != 0)
 			{
-				perror("tcsetattr fd1");
+				printf("tcsetattr fd1\n");
 			}
 			return;
 		}
@@ -107,7 +114,7 @@ void SetSpeed(int fd, int speed)
 	if (i == 12)
     {
 		printf("\tSorry, please set the correct baud rate!\n");
-		PrintUartUsage(stderr, 1);
+		PrintUartUsage();
 	}
 }
 
@@ -125,11 +132,11 @@ int SetParity(int fd, int dataBits, int stopBits, int parity)
 	struct termios options;
 	if (tcgetattr(fd, &options) != 0)
 	{
-		perror("SetupSerial 1");
+		printf("SetupSerial 1\n");
 		return 1;
 	}
 	options.c_cflag &= ~CSIZE;
-	switch (databits) /*设置数据位数*/
+	switch (dataBits) /*设置数据位数*/
 	{
 		case 7:
 			options.c_cflag |= CS7;
@@ -138,7 +145,7 @@ int SetParity(int fd, int dataBits, int stopBits, int parity)
 			options.c_cflag |= CS8;
 			break;
 		default:
-			fprintf(stderr, "Unsupported data size\n");
+			printf("Unsupported data size\n");
 			return 1;
 	}
 
@@ -166,11 +173,11 @@ int SetParity(int fd, int dataBits, int stopBits, int parity)
 			options.c_cflag &= ~CSTOPB;
 			break;
 		default:
-			fprintf(stderr, "Unsupported parity\n");
+			printf("Unsupported parity\n");
 			return 1;
 	}
  	/* 设置停止位*/
-  	switch (stopbits)
+  	switch (stopBits)
 	{
 		case 1:
 			options.c_cflag &= ~CSTOPB;
@@ -179,7 +186,7 @@ int SetParity(int fd, int dataBits, int stopBits, int parity)
 			options.c_cflag |= CSTOPB;
 			break;
 		default:
-			fprintf(stderr, "Unsupported stop bits\n");
+			printf("Unsupported stop bits\n");
 			return 1;
  	}
   	/* Set input parity option */
@@ -193,7 +200,7 @@ int SetParity(int fd, int dataBits, int stopBits, int parity)
   	tcflush(fd, TCIFLUSH);		/* Update the options and do it NOW */
   	if (tcsetattr(fd, TCSANOW, &options) != 0)
 	{
-    	perror("SetupSerial 3");
+    	printf("SetupSerial 3\n");
   		return 1;
  	}
 	return 0;
@@ -202,18 +209,15 @@ int SetParity(int fd, int dataBits, int stopBits, int parity)
 
 /**
  * @brief 打印串口的使用方法
- * @param stream 打印信息的输出流
- * @param exitCode 错误码
  * @return void
  */
-void PrintUartUsage(FILE *stream, int exitCode)
+void PrintUartUsage()
 {
-    fprintf(stream, "Usage: %s option [ dev... ] \n", program_name);
-    fprintf(stream,
-            "\t-h  --help     Display this usage information.\n"
+    printf("Usage: program_name option [ dev... ] \n");
+    printf("\t-h  --help     Display this usage information.\n"
             "\t-d  --device   The device ttyS[0-3] or ttySCMA[0-1]\n"
 	    	"\t-b  --baudrate Set the baud rate you can select\n"
 	    	"\t               [230400, 115200, 57600, 38400, 19200, 9600, 4800, 2400, 1200, 300]\n"
             "\t-s  --string   Write the device data\n");
-    exit(exitCode);
+    return;
 }

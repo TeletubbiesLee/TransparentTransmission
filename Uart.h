@@ -12,7 +12,6 @@
 #ifndef _UART_H_
 #define _UART_H_
 
-#include <fcntl.h>
 
 #define UART_DEVICE_NAME    "/dev/ttymxc1"
 #define UART_BANDRATE       115200
@@ -24,6 +23,6 @@ int UartInit(char *device, int bandrate);
 int OpenDevice(char *dev);
 int SetParity(int fd, int dataBits, int stopBits, int parity);
 void SetSpeed(int fd, int speed);
-void PrintUartUsage(FILE *stream, int exitCode);
+void PrintUartUsage();
 
 #endif

@@ -9,9 +9,16 @@
  * @version ver 1.0
  */
 
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <string.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include "Pthread.h"
 #include "Net.h"
-#include <netinet/in.h>
 
 
 /**
@@ -19,7 +26,7 @@
  * @param param 整型数组，第一个数存放网络socket描述符，第二个数存放串口描述符
  * @return 设备文件描述符或-1
  */
-void Net2Uart(void *param)
+void Net2UartPthread(void *param)
 {
     int sockfd, uartfd;
     int recvBytes = 0;      //接收到的字节数
@@ -35,7 +42,7 @@ void Net2Uart(void *param)
             if(write(uartfd, bufReceive, strlen(bufReceive)) == -1)
             {
                 printf("write error！\r\n");
-                exit(1);
+                continue;
             }
             printf("socket receivr, usart send: %s\r\n", bufReceive);
         }
@@ -49,7 +56,7 @@ void Net2Uart(void *param)
  * @param param 整型数组，第一个数存放网络socket描述符，第二个数存放串口描述符
  * @return 设备文件描述符或-1
  */
-void Uart2Net(void *param)
+void Uart2NetPthread(void *param)
 {
     int sockfd, uartfd;
     int nread = 0;
@@ -65,7 +72,7 @@ void Uart2Net(void *param)
             if (send(sockfd, bufSend, strlen(bufSend), 0) == -1)
             {
                 printf("send error！\r\n");
-                exit(1);
+                continue;
             }
             printf("usart receivr, socket send: %s\r\n", bufSend);
         }
@@ -79,7 +86,7 @@ void Uart2Net(void *param)
  * @param param 整型数组，第一个数存放网络socket描述符，第二个数存放串口描述符
  * @return 设备文件描述符或-1
  */
-void UDP2Uart(void *param)
+void UDP2UartPthread(void *param)
 {
     int uartfd, sockfd;
     int recvBytes;
@@ -102,7 +109,7 @@ void UDP2Uart(void *param)
             if (write(uartfd, bufReceive, strlen(bufReceive)) == -1)
             {
                 printf("write error！\r\n");
-                exit(1);
+                continue;
             }
             printf("sockfd receivr, usart send: %s\r\n", bufReceive);
         sleep(1);
@@ -117,7 +124,7 @@ void UDP2Uart(void *param)
  * @param param 整型数组，第一个数存放网络socket描述符，第二个数存放串口描述符
  * @return 设备文件描述符或-1
  */
-void Uart2UDP(void *param)
+void Uart2UDPPthread(void *param)
 {
     int uartfd, sockfd;
     char bufSend[MAX_DATA_SIZE] = {0};
@@ -139,7 +146,7 @@ void Uart2UDP(void *param)
 			if (sendto(sockfd, bufSend, strlen(bufSend), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) == -1)
 			{
 				printf("send error！\r\n");
-				exit(1);
+				continue;
 			}
 			printf("usart receivr, sockfd send: %s\r\n", bufSend);
 		}

@@ -12,10 +12,10 @@
 #ifndef _PTHREAD_H_
 #define _PTHREAD_H_
 
-void Net2Uart(void *param);
-void Uart2Net(void *param);
-void UDP2Uart(void *param);
-void Uart2UDP(void *param);
+void Net2UartPthread(void *param);
+void Uart2NetPthread(void *param);
+void UDP2UartPthread(void *param);
+void Uart2UDPPthread(void *param);
 
 
 #endif
