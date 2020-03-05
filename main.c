@@ -1,32 +1,20 @@
-//
-// #include <stdlib.h>
-// #include <errno.h>
-// #include <string.h>
-// #include <netdb.h>
-//
-// #include <fcntl.h>
-// #include <sys/types.h>
-// #include <sys/stat.h>
-// #include <sys/ioctl.h>
-// 
-// #include <arpa/inet.h>
-// #include <sys/socket.h>
-// #include <getopt.h>
-// #include <termios.h>
+/**
+ * @file main.c
+ * @brief Linux透传功能main函数文件
+ * @copyright Copyright (c) 2020 Beijing SOJO Electric CO., LTD.
+ * @company  SOJO
+ * @date 2020.03.05
+ *
+ * @author Lei.L
+ * @version ver 1.0
+ */
 
-#include <stdio.h>
-#include <pthread.h>
-#include <unistd.h>
-#include "Uart.h"
-#include "Net.h"
+
+
 #include "Pthread.h"
 
 
 
-
-int TCP_Client2Uart(char *ipAddress);
-int TCP_Server2Uart(void);
-int UDP2Uart(void);
 
 
 int main(int argc, char *argv[])
@@ -35,136 +23,7 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-/**
- * @breif TCP客户端转串口
- * @param ipAddress IP地址，格式："192.168.1.1"
- * @return 成功0或失败-1
- */
-int TCP_Client2Uart(char *ipAddress)
-{
-	int uartfd, sockfd;		//串口和网卡设备的文件描述符
-	int fdArray[2] = {0};	//存放网络socket和串口的描述符
-	pthread_t net2UartPid, uart2NetPid;		//网口与串口转换的线程ID号
-	int ret = -1;
-	void *status;
-	
-	sockfd = TCP_NetConnect(SERVER_PORT, ipAddress);		//连接网口
-	uartfd = UartInit(UART_DEVICE_NAME, UART_BANDRATE);		//打开串口
 
-	fdArray[0] = sockfd;
-	fdArray[1] = uartfd;
-
-	/* 常见网口与串口透传的线程 */
-	ret = pthread_create(&net2UartPid, NULL, (void*)Net2UartPthread, fdArray);
-	if(0 != ret)
-	{
-		printf("pthread Net2Uart create error!\n");
-		goto TCP_CLIENT_CLOSE;
-	}
-
-	ret = pthread_create(&uart2NetPid, NULL, (void*)Uart2NetPthread, fdArray);
-	if(0 != ret)
-	{
-		printf("pthread Uart2Net create error!\n");
-		goto TCP_CLIENT_CLOSE;
-	}
-
-TCP_CLIENT_CLOSE:
-	pthread_join(net2UartPid, &status);
-	pthread_join(uart2NetPid, &status);
-	close(sockfd);
-	close(uartfd);
-
-	return 0;
-}
-
-
-/**
- * @breif TCP服务端转串口
- * @return 成功0或失败-1
- */
-int TCP_Server2Uart(void)
-{
-	int uartfd, sockfd, clientfd;
-	int fdArray[2] = {0};	//存放网络socket和串口的描述符
-	pthread_t net2UartPid, uart2NetPid;		//网口与串口转换的线程ID号
-	int ret = -1;
-	void *status;
-
-	sockfd = TCP_NetListen(SERVER_PORT);
-	uartfd = UartInit(UART_DEVICE_NAME, UART_BANDRATE);		//打开串口
-	clientfd = TCP_NetAccept(sockfd);
-	
-	fdArray[0] = clientfd;
-	fdArray[1] = uartfd;
-
-	/* 常见网口与串口透传的线程 */
-	ret = pthread_create(&net2UartPid, NULL, (void*)Net2UartPthread, fdArray);
-	if(0 != ret)
-	{
-		printf("pthread Net2Uart create error!\n");
-		goto TCP_SERVER_CLOSE;
-	}
-
-	ret = pthread_create(&uart2NetPid, NULL, (void*)Uart2NetPthread, fdArray);
-	if(0 != ret)
-	{
-		printf("pthread Uart2Net create error!\n");
-		goto TCP_SERVER_CLOSE;
-	}
-
-TCP_SERVER_CLOSE:
-	pthread_join(net2UartPid, &status);
-	pthread_join(uart2NetPid, &status);
-	close(clientfd);
-	close(sockfd);
-	close(uartfd);
-
-	return 0;
-}
-
-
-/**
- * @breif UDP转串口
- * @return 成功0或失败-1
- */
-int UDP2Uart(void)
-{
-	int uartfd, sockfd;
-	int fdArray[2] = {0};	//存放网络socket和串口的描述符
-	pthread_t udp2UartPid, uart2UdpPid;		//网口与串口转换的线程ID号
-	int ret = -1;
-	void *status;
-
-	sockfd = UDP_NetConnect(SERVER_PORT);		//连接网口
-	uartfd = UartInit(UART_DEVICE_NAME, UART_BANDRATE);		//打开串口
-
-	fdArray[0] = sockfd;
-	fdArray[1] = uartfd;
-
-	/* 常见网口与串口透传的线程 */
-	ret = pthread_create(&udp2UartPid, NULL, (void*)UDP2UartPthread, fdArray);
-	if(0 != ret)
-	{
-		printf("pthread UDP2Uart create error!\n");
-		goto UDP_CLOSE;
-	}
-
-	ret = pthread_create(&uart2UdpPid, NULL, (void*)Uart2UDPPthread, fdArray);
-	if(0 != ret)
-	{
-		printf("pthread Uart2UDP create error!\n");
-		goto UDP_CLOSE;
-	}
-
-UDP_CLOSE:
-	pthread_join(udp2UartPid, &status);
-	pthread_join(uart2UdpPid, &status);
-	close(sockfd);
-	close(uartfd);
-
-	return 0;
-}
 
 
 

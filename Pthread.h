@@ -12,10 +12,10 @@
 #ifndef _PTHREAD_H_
 #define _PTHREAD_H_
 
-void Net2UartPthread(void *param);
-void Uart2NetPthread(void *param);
-void UDP2UartPthread(void *param);
-void Uart2UDPPthread(void *param);
+
+int TCP_Client2Uart(char *ipAddress);
+int TCP_Server2Uart(void);
+int UDP2Uart(void);
 
 
 #endif
