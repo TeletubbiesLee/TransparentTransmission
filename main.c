@@ -19,7 +19,7 @@
 
 int main(int argc, char *argv[])
 {
-	TCP_Client2Uart("192.168.10.11");
+	UDP2Uart();
 	return 0;
 }
 

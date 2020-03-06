@@ -30,7 +30,7 @@ static void Uart2UDPPthread(void *param);
 
 
 /**
- * @breif TCP客户端转串口
+ * @breif TCP客户端转串口，外接TCP服务器端和串口
  * @param ipAddress IP地址，格式："192.168.1.1"
  * @return 成功0或失败-1
  */
@@ -74,7 +74,7 @@ TCP_CLIENT_CLOSE:
 
 
 /**
- * @breif TCP服务端转串口
+ * @breif TCP服务端转串口，外接TCP客户端和串口
  * @return 成功0或失败-1
  */
 int TCP_Server2Uart(void)
@@ -119,7 +119,7 @@ TCP_SERVER_CLOSE:
 
 
 /**
- * @breif UDP转串口
+ * @breif UDP转串口，外接UDP和串口
  * @return 成功0或失败-1
  */
 int UDP2Uart(void)
@@ -179,14 +179,13 @@ static void Net2UartPthread(void *param)
         recvBytes = recv(sockfd, bufReceive, MAX_DATA_SIZE, 0);
         if(recvBytes > 0)
         {
-            if(write(uartfd, bufReceive, strlen(bufReceive)) == -1)
+            if(write(uartfd, bufReceive, recvBytes) == -1)
             {
                 printf("write error！\r\n");
                 continue;
             }
-            printf("socket receivr, usart send: %s\r\n", bufReceive);
+            memset(bufReceive, 0, MAX_DATA_SIZE);
         }
-        sleep(1);
     } 
 }
 
@@ -209,14 +208,13 @@ static void Uart2NetPthread(void *param)
         nread = read(uartfd, bufSend, sizeof(bufSend));
         if (nread > 0)
         {
-            if (send(sockfd, bufSend, strlen(bufSend), 0) == -1)
+            if (send(sockfd, bufSend, nread, 0) == -1)
             {
                 printf("send error！\r\n");
                 continue;
             }
-            printf("usart receivr, socket send: %s\r\n", bufSend);
+            memset(bufSend, 0, MAX_DATA_SIZE);
         }
-        sleep(1);
     }
 }
 
@@ -246,13 +244,12 @@ static void UDP2UartPthread(void *param)
         recvBytes = recvfrom(sockfd, bufReceive, sizeof(bufReceive)-1, 0, (struct sockaddr *)&remoteAddr, &sinSize);
         if(recvBytes > 0)
         {
-            if (write(uartfd, bufReceive, strlen(bufReceive)) == -1)
+            if (write(uartfd, bufReceive, recvBytes) == -1)
             {
                 printf("write error！\r\n");
                 continue;
             }
-            printf("sockfd receivr, usart send: %s\r\n", bufReceive);
-        sleep(1);
+            memset(bufReceive, 0, MAX_DATA_SIZE);
         }
     }
     
@@ -283,13 +280,12 @@ void Uart2UDPPthread(void *param)
 		nread = read(uartfd, bufSend, sizeof(bufSend));
 		if (nread > 0)
 		{
-			if (sendto(sockfd, bufSend, strlen(bufSend), 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) == -1)
+			if (sendto(sockfd, bufSend, nread, 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) == -1)
 			{
 				printf("send error！\r\n");
 				continue;
 			}
-			printf("usart receivr, sockfd send: %s\r\n", bufSend);
+			memset(bufSend, 0, MAX_DATA_SIZE);
 		}
-        sleep(1);
 	}
 }
