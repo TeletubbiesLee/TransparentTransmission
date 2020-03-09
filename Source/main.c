@@ -10,8 +10,9 @@
  */
 
 
-
-#include "Pthread.h"
+#include "./Struct2Json/ConfigFile.h"
+#include "./Struct2Json/JsonFileOperation.h"
+#include "./App/Pthread.h"
 
 
 
@@ -19,7 +20,10 @@
 
 int main(int argc, char *argv[])
 {
-	UDP2Uart();
+	Struct2JsonInit();
+	//CreateJsonFile();
+	GetJsonFile();
+	TCP_Client2Uart(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString);
 	return 0;
 }
 

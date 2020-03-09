@@ -13,12 +13,6 @@
 #define _UART_H_
 
 
-#define UART_DEVICE_NAME    "/dev/ttymxc1"
-#define UART_BANDRATE       115200
-#define UART_DATA_BITS      8
-#define UART_STOP_BITS      1
-#define UART_PARITY         'N'
-
 int UartInit(char *device, int bandrate);
 int OpenDevice(char *dev);
 int SetParity(int fd, int dataBits, int stopBits, int parity);

@@ -31,7 +31,8 @@
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1537655139" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool command="arm-none-linux-gnueabi-gcc" id="cdt.managedbuild.tool.gnu.c.linker.mingw.base.491990190" name="MinGW C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.mingw.base">
-								<option id="gnu.c.link.option.libs.35758339" superClass="gnu.c.link.option.libs" valueType="libs">
+								<option id="gnu.c.link.option.libs.35758339" name="Libraries (-l)" superClass="gnu.c.link.option.libs" valueType="libs">
+									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="pthread"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.linker.input.1593707209" superClass="cdt.managedbuild.tool.gnu.c.linker.input">

@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <termios.h>
 #include "Uart.h"
+#include "../Struct2Json/ConfigFile.h"
 
 
 static int SpeedArray[] = {
@@ -38,6 +39,7 @@ static int BandrateArray[] = {
 int UartInit(char *device, int bandrate)
 {
 	int uartfd = -1;
+	int ret = 0;
 
 	uartfd = OpenDevice(device);
 	if (uartfd > 0)
@@ -50,7 +52,9 @@ int UartInit(char *device, int bandrate)
 		return -1;
 	}
 
-	if (SetParity(uartfd, UART_DATA_BITS, UART_STOP_BITS, UART_PARITY) == 1)
+	ret = SetParity(uartfd, g_ConfigFile[UART_DATA_BITS_NUM].configData,
+			g_ConfigFile[UART_STOP_BITS_NUM].configData, g_ConfigFile[UART_PARITY_NUM].configData);
+	if (1 == ret)
 	{
 		printf("Set Parity Error\n");
 		close(uartfd);

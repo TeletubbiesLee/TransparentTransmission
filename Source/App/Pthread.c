@@ -21,6 +21,7 @@
 #include "Pthread.h"
 #include "Net.h"
 #include "Uart.h"
+#include "../Struct2Json/ConfigFile.h"
 
 
 static void Net2UartPthread(void *param);
@@ -42,8 +43,8 @@ int TCP_Client2Uart(char *ipAddress)
 	int ret = -1;
 	void *status;
 
-	sockfd = TCP_NetConnect(SERVER_PORT, ipAddress);		//连接网口
-	uartfd = UartInit(UART_DEVICE_NAME, UART_BANDRATE);		//打开串口
+	sockfd = TCP_NetConnect(g_ConfigFile[SERVER_PORT_NUM].configData, ipAddress);		//连接网口
+	uartfd = UartInit(g_ConfigFile[UART_DEVICE_NAME_NUM].configString, g_ConfigFile[UART_BANDRATE_NUM].configData);	//打开串口
 
 	fdArray[0] = sockfd;
 	fdArray[1] = uartfd;
@@ -85,8 +86,8 @@ int TCP_Server2Uart(void)
 	int ret = -1;
 	void *status;
 
-	sockfd = TCP_NetListen(SERVER_PORT);
-	uartfd = UartInit(UART_DEVICE_NAME, UART_BANDRATE);		//打开串口
+	sockfd = TCP_NetListen(g_ConfigFile[SERVER_PORT_NUM].configData);
+	uartfd = UartInit(g_ConfigFile[UART_DEVICE_NAME_NUM].configString, g_ConfigFile[UART_BANDRATE_NUM].configData);	//打开串口
 	clientfd = TCP_NetAccept(sockfd);
 
 	fdArray[0] = clientfd;
@@ -130,8 +131,8 @@ int UDP2Uart(void)
 	int ret = -1;
 	void *status;
 
-	sockfd = UDP_NetConnect(SERVER_PORT);		//连接网口
-	uartfd = UartInit(UART_DEVICE_NAME, UART_BANDRATE);		//打开串口
+	sockfd = UDP_NetConnect(g_ConfigFile[SERVER_PORT_NUM].configData);		//连接网口
+	uartfd = UartInit(g_ConfigFile[UART_DEVICE_NAME_NUM].configString, g_ConfigFile[UART_BANDRATE_NUM].configData);	//打开串口
 
 	fdArray[0] = sockfd;
 	fdArray[1] = uartfd;
@@ -236,8 +237,8 @@ static void UDP2UartPthread(void *param)
     uartfd = ((int*)param)[1];
 
     remoteAddr.sin_family = AF_INET;
-	remoteAddr.sin_port = htons(SERVER_PORT);
-	remoteAddr.sin_addr.s_addr = inet_addr(REMOTE_IP_ADDRESS);
+	remoteAddr.sin_port = htons(g_ConfigFile[SERVER_PORT_NUM].configData);
+	remoteAddr.sin_addr.s_addr = inet_addr(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString);
 
     while(1)
     {
@@ -272,8 +273,8 @@ void Uart2UDPPthread(void *param)
     uartfd = ((int*)param)[1];
 
     remoteAddr.sin_family = AF_INET;
-	remoteAddr.sin_port = htons(SERVER_PORT);
-	remoteAddr.sin_addr.s_addr = inet_addr(REMOTE_IP_ADDRESS);
+	remoteAddr.sin_port = htons(g_ConfigFile[SERVER_PORT_NUM].configData);
+	remoteAddr.sin_addr.s_addr = inet_addr(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString);
 
     while(1)
 	{
