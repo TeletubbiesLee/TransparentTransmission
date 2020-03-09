@@ -43,7 +43,7 @@ int TCP_Client2Uart(char *ipAddress)
 	int ret = -1;
 	void *status;
 
-	sockfd = TCP_NetConnect(g_ConfigFile[SERVER_PORT_NUM].configData, ipAddress);		//连接网口
+	sockfd = TCP_NetConnect(g_ConfigFile[LOCAL_PORT_NUM].configData, ipAddress);		//连接网口
 	uartfd = UartInit(g_ConfigFile[UART_DEVICE_NAME_NUM].configString, g_ConfigFile[UART_BANDRATE_NUM].configData);	//打开串口
 
 	fdArray[0] = sockfd;
@@ -69,6 +69,7 @@ TCP_CLIENT_CLOSE:
 	pthread_join(uart2NetPid, &status);
 	close(sockfd);
 	close(uartfd);
+	printf("TCP CLIENT CLOSE!\n");
 
 	return 0;
 }
@@ -86,7 +87,7 @@ int TCP_Server2Uart(void)
 	int ret = -1;
 	void *status;
 
-	sockfd = TCP_NetListen(g_ConfigFile[SERVER_PORT_NUM].configData);
+	sockfd = TCP_NetListen(g_ConfigFile[LOCAL_PORT_NUM].configData);
 	uartfd = UartInit(g_ConfigFile[UART_DEVICE_NAME_NUM].configString, g_ConfigFile[UART_BANDRATE_NUM].configData);	//打开串口
 	clientfd = TCP_NetAccept(sockfd);
 
@@ -114,6 +115,7 @@ TCP_SERVER_CLOSE:
 	close(clientfd);
 	close(sockfd);
 	close(uartfd);
+	printf("TCP SERVER CLOSE!\n");
 
 	return 0;
 }
@@ -126,16 +128,19 @@ TCP_SERVER_CLOSE:
 int UDP2Uart(void)
 {
 	int uartfd, sockfd;
-	int fdArray[2] = {0};	//存放网络socket和串口的描述符
+	int fdArray[3] = {0};	//存放网络socket和串口的描述符
 	pthread_t udp2UartPid, uart2UdpPid;		//网口与串口转换的线程ID号
+	struct sockaddr_in remoteAddr;
 	int ret = -1;
 	void *status;
 
-	sockfd = UDP_NetConnect(g_ConfigFile[SERVER_PORT_NUM].configData);		//连接网口
+	sockfd = UDP_NetConnect(g_ConfigFile[LOCAL_PORT_NUM].configData);		//连接网口
 	uartfd = UartInit(g_ConfigFile[UART_DEVICE_NAME_NUM].configString, g_ConfigFile[UART_BANDRATE_NUM].configData);	//打开串口
+	SetRemoteAddress(&remoteAddr);
 
 	fdArray[0] = sockfd;
 	fdArray[1] = uartfd;
+	fdArray[2] = (int)&remoteAddr;
 
 	/* 常见网口与串口透传的线程 */
 	ret = pthread_create(&udp2UartPid, NULL, (void*)UDP2UartPthread, fdArray);
@@ -157,6 +162,7 @@ UDP_CLOSE:
 	pthread_join(uart2UdpPid, &status);
 	close(sockfd);
 	close(uartfd);
+	printf("UDP CLOSE!\n");
 
 	return 0;
 }
@@ -229,20 +235,17 @@ static void UDP2UartPthread(void *param)
 {
     int uartfd, sockfd;
     int recvBytes;
-    struct sockaddr_in remoteAddr;
+    struct sockaddr_in *remoteAddr = NULL;
 	char bufReceive[MAX_DATA_SIZE] = {0};
     socklen_t sinSize;
 
     sockfd = ((int*)param)[0];
     uartfd = ((int*)param)[1];
-
-    remoteAddr.sin_family = AF_INET;
-	remoteAddr.sin_port = htons(g_ConfigFile[SERVER_PORT_NUM].configData);
-	remoteAddr.sin_addr.s_addr = inet_addr(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString);
+    remoteAddr = (struct sockaddr_in *)((int*)param)[2];
 
     while(1)
     {
-        recvBytes = recvfrom(sockfd, bufReceive, sizeof(bufReceive)-1, 0, (struct sockaddr *)&remoteAddr, &sinSize);
+        recvBytes = recvfrom(sockfd, bufReceive, sizeof(bufReceive)-1, 0, (struct sockaddr *)remoteAddr, &sinSize);
         if(recvBytes > 0)
         {
             if (write(uartfd, bufReceive, recvBytes) == -1)
@@ -267,21 +270,18 @@ void Uart2UDPPthread(void *param)
     int uartfd, sockfd;
     char bufSend[MAX_DATA_SIZE] = {0};
 	int nread = 0;
-    struct sockaddr_in remoteAddr;
+    struct sockaddr_in *remoteAddr = NULL;
 
     sockfd = ((int*)param)[0];
     uartfd = ((int*)param)[1];
-
-    remoteAddr.sin_family = AF_INET;
-	remoteAddr.sin_port = htons(g_ConfigFile[SERVER_PORT_NUM].configData);
-	remoteAddr.sin_addr.s_addr = inet_addr(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString);
+    remoteAddr = (struct sockaddr_in *)((int*)param)[2];
 
     while(1)
 	{
 		nread = read(uartfd, bufSend, sizeof(bufSend));
 		if (nread > 0)
 		{
-			if (sendto(sockfd, bufSend, nread, 0, (struct sockaddr *)&remoteAddr, sizeof(remoteAddr)) == -1)
+			if (sendto(sockfd, bufSend, nread, 0, (struct sockaddr *)remoteAddr, sizeof(struct sockaddr_in)) == -1)
 			{
 				printf("send error！\r\n");
 				continue;

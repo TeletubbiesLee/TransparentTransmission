@@ -22,5 +22,6 @@ int TCP_NetListen(int serverPort);
 int TCP_NetAccept(int sockfd);
 int UDP_NetConnect(int serverPort);
 void SetNetNonBlock(int sockfd);
+void SetRemoteAddress(struct sockaddr_in *remoteAddr);
 
 #endif

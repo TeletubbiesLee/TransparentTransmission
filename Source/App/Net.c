@@ -18,6 +18,7 @@
 #include <netdb.h>
 #include <strings.h>
 #include "Net.h"
+#include "../Struct2Json/ConfigFile.h"
 
 
 /**
@@ -156,7 +157,7 @@ int UDP_NetConnect(int serverPort)
 /**
  * @breif 打开串口设备
  * @param sockfd 网口文件描述符
- * @return 设备文件描述符或-1
+ * @return void
  */
 void SetNetNonBlock(int sockfd)
 {
@@ -164,6 +165,19 @@ void SetNetNonBlock(int sockfd)
     
     flags = fcntl(sockfd, F_GETFL, 0);				//获取原始sockfd属性
 	fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);		//添加非阻塞
+}
+
+
+/**
+ * @breif 打开串口设备
+ * @param remoteAddr 远端IP地址和端口号设置
+ * @return void
+ */
+void SetRemoteAddress(struct sockaddr_in *remoteAddr)
+{
+	remoteAddr->sin_family = AF_INET;
+	remoteAddr->sin_port = htons(g_ConfigFile[REMOTE_PORT_NUM].configData);
+	remoteAddr->sin_addr.s_addr = inet_addr(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString);
 }
 
 

@@ -49,16 +49,28 @@ ConfigFile g_ConfigFile[] =
 		.number = UART_PARITY_NUM
 	},
 	{
+		.dataName = "LocalIpAddress",
+		.configString = "192.168.10.10",
+		.configData = 0xC0A80A0A,
+		.number = LOCAL_IP_ADDRESS_NUM
+	},
+	{
+		.dataName = "LocalPort",
+		.configString = "5555",
+		.configData = 5555,
+		.number = LOCAL_PORT_NUM
+	},
+	{
 		.dataName = "RemoteIpAddress",
 		.configString = "192.168.10.11",
 		.configData = 0xC0A80A0B,
 		.number = REMOTE_IP_ADDRESS_NUM
 	},
 	{
-		.dataName = "ServerPort",
+		.dataName = "RemotePort",
 		.configString = "3333",
 		.configData = 3333,
-		.number = SERVER_PORT_NUM
+		.number = REMOTE_PORT_NUM
 	}
 };
 

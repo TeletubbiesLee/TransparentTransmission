@@ -21,9 +21,9 @@
 int main(int argc, char *argv[])
 {
 	Struct2JsonInit();
-	//CreateJsonFile();
 	GetJsonFile();
-	TCP_Client2Uart(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString);
+
+	UDP2Uart();
 	return 0;
 }
 
