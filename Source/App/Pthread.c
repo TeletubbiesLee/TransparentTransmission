@@ -25,7 +25,8 @@
 
 
 
-static void Net2UartPthread(void *param);
+static void Client2UartPthread(void *param);
+static void Server2UartPthread(void *param);
 static void Uart2NetPthread(void *param);
 static void UDP2UartPthread(void *param);
 static void Uart2UDPPthread(void *param);
@@ -47,11 +48,11 @@ int TCP_Client2Uart(void)
 	sockfd = TCP_NetConnect(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString, g_ConfigFile[REMOTE_PORT_NUM].configData);//连接网口
 	uartfd = UartInit(g_ConfigFile[UART_DEVICE_NAME_NUM].configString, g_ConfigFile[UART_BANDRATE_NUM].configData);	//打开串口
 
-	fdArray[0] = (int)&sockfd;
-	fdArray[1] = uartfd;
+	fdArray[0] = uartfd;
+	fdArray[1] = (int)&sockfd;
 
 	/* 常见网口与串口透传的线程 */
-	ret = pthread_create(&net2UartPid, NULL, (void*)Net2UartPthread, fdArray);
+	ret = pthread_create(&net2UartPid, NULL, (void*)Client2UartPthread, fdArray);
 	if(0 != ret)
 	{
 		printf("pthread Net2Uart create error!\n");
@@ -93,11 +94,12 @@ int TCP_Server2Uart(void)
 	clientfd = TCP_NetAccept(sockfd);
 
 
-	fdArray[0] = clientfd;
-	fdArray[1] = uartfd;
+	fdArray[0] = uartfd;
+	fdArray[1] = (int)&clientfd;
+	fdArray[2] = sockfd;
 
 	/* 常见网口与串口透传的线程 */
-	ret = pthread_create(&net2UartPid, NULL, (void*)Net2UartPthread, fdArray);
+	ret = pthread_create(&net2UartPid, NULL, (void*)Server2UartPthread, fdArray);
 	if(0 != ret)
 	{
 		printf("pthread Net2Uart create error!\n");
@@ -140,8 +142,8 @@ int UDP2Uart(void)
 	uartfd = UartInit(g_ConfigFile[UART_DEVICE_NAME_NUM].configString, g_ConfigFile[UART_BANDRATE_NUM].configData);	//打开串口
 	SetRemoteAddress(&remoteAddr);
 
-	fdArray[0] = sockfd;
-	fdArray[1] = uartfd;
+	fdArray[0] = uartfd;
+	fdArray[1] = sockfd;
 	fdArray[2] = (int)&remoteAddr;
 
 	/* 常见网口与串口透传的线程 */
@@ -171,18 +173,18 @@ UDP_CLOSE:
 
 
 /**
- * @breif 网口接口转发到串口的线程程序
+ * @breif TCP客户端接口转发到串口的线程程序
  * @param param 整型数组，第一个数存放网络socket描述符，第二个数存放串口描述符
  * @return 设备文件描述符或-1
  */
-static void Net2UartPthread(void *param)
+static void Client2UartPthread(void *param)
 {
     int *socketfd, uartfd;
     int recvBytes = 0;      //接收到的字节数
     char bufReceive[MAX_DATA_SIZE] = {0};       //接收缓存区
 
-    socketfd = (int*)((int*)param)[0];
-    uartfd = ((int*)param)[1];
+    uartfd = ((int*)param)[0];
+    socketfd = (int*)((int*)param)[1];
 
     while(1)
     {
@@ -198,7 +200,7 @@ static void Net2UartPthread(void *param)
         }
         else if(recvBytes == 0)
         {
-        	shutdown(*socketfd, SHUT_RDWR);
+        	while(shutdown(*socketfd, SHUT_RDWR));		//关闭连接
         	*socketfd = -1;
         	printf("connect close!\n");
 
@@ -208,6 +210,47 @@ static void Net2UartPthread(void *param)
 				return;
         }
     } 
+}
+
+
+/**
+ * @breif TCP服务端接口转发到串口的线程程序
+ * @param param 整型数组，第一个数存放网络socket描述符，第二个数存放串口描述符
+ * @return 设备文件描述符或-1
+ */
+static void Server2UartPthread(void *param)
+{
+    int socketfd, uartfd, *clientfd;
+    int recvBytes = 0;      //接收到的字节数
+    char bufReceive[MAX_DATA_SIZE] = {0};       //接收缓存区
+
+    uartfd = ((int*)param)[0];
+    clientfd = (int*)((int*)param)[1];
+    socketfd = ((int*)param)[2];
+
+    while(1)
+    {
+        recvBytes = recv(*clientfd, bufReceive, MAX_DATA_SIZE, 0);
+        if(recvBytes > 0)
+        {
+            if(write(uartfd, bufReceive, recvBytes) == -1)
+            {
+                printf("write error！\r\n");
+                continue;
+            }
+            memset(bufReceive, 0, MAX_DATA_SIZE);
+        }
+        else if(recvBytes == 0)
+        {
+        	while(shutdown(*clientfd, SHUT_RDWR));		//关闭连接
+        	*clientfd = -1;
+        	printf("connect close!\n");
+
+			*clientfd = TCP_NetAccept(socketfd);		//重新连接服务端
+			if(*clientfd == -1)
+				return;
+        }
+    }
 }
 
 
@@ -222,8 +265,8 @@ static void Uart2NetPthread(void *param)
     int nread = 0;
     char bufSend[MAX_DATA_SIZE] = {0};
 
-    socketfd = (int*)((int*)param)[0];
-    uartfd = ((int*)param)[1];
+    uartfd = ((int*)param)[0];
+    socketfd = (int*)((int*)param)[1];
 
     while(1)
     {
@@ -254,8 +297,8 @@ static void UDP2UartPthread(void *param)
 	char bufReceive[MAX_DATA_SIZE] = {0};
     socklen_t sinSize;
 
-    sockfd = ((int*)param)[0];
-    uartfd = ((int*)param)[1];
+    uartfd = ((int*)param)[0];
+    sockfd = ((int*)param)[1];
     remoteAddr = (struct sockaddr_in *)((int*)param)[2];
 
     while(1)
@@ -287,8 +330,8 @@ void Uart2UDPPthread(void *param)
 	int nread = 0;
     struct sockaddr_in *remoteAddr = NULL;
 
-    sockfd = ((int*)param)[0];
-    uartfd = ((int*)param)[1];
+    uartfd = ((int*)param)[0];
+    sockfd = ((int*)param)[1];
     remoteAddr = (struct sockaddr_in *)((int*)param)[2];
 
     while(1)

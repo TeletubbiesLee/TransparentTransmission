@@ -78,16 +78,17 @@ int TCP_NetListen(int serverPort)
 	loaclAddr.sin_family = AF_INET;
 	loaclAddr.sin_port = htons(serverPort);
 	loaclAddr.sin_addr.s_addr = INADDR_ANY;
-	bzero(&(loaclAddr.sin_zero),8);
+	bzero(&(loaclAddr.sin_zero), 8);
 
 	if (bind(sockfd, (struct sockaddr *)&loaclAddr, sizeof(struct sockaddr)) == -1)
 	{
-		printf("bind error!");
+		printf("bind error!\n");
 		return -1;
 	}
+
 	if (listen(sockfd, BACKLOG) == -1)
-    {
-		printf("listen error!");
+	{
+		printf("listen error!\n");
 		return -1;
 	}
 
@@ -107,16 +108,14 @@ int TCP_NetAccept(int sockfd)
     socklen_t sinSize;
 
     sinSize = sizeof(struct sockaddr_in);
-	clientfd = accept(sockfd, (struct sockaddr *)&remoteAddr, &sinSize);
-	if (clientfd == -1)
+
+	while ((clientfd = accept(sockfd, (struct sockaddr *)&remoteAddr, &sinSize)) == -1)
 	{
 		printf("accept error\n");
-        return -1;
+		sleep(1);
 	}
-	else
-	{
-		printf("REC FROM： %s\n", inet_ntoa(remoteAddr.sin_addr));
-	}
+
+	printf("Receive From： %s\n", inet_ntoa(remoteAddr.sin_addr));
 
     return clientfd;
 }
