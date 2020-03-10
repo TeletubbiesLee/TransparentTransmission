@@ -17,7 +17,7 @@
 #define BACKLOG 			10		/* max client */
 
 
-int TCP_NetConnect(int serverPort, char *ipAddress);
+int TCP_NetConnect(char *ipAddress, int serverPort);
 int TCP_NetListen(int serverPort);
 int TCP_NetAccept(int sockfd);
 int UDP_NetConnect(int serverPort);

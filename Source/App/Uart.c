@@ -72,7 +72,7 @@ int UartInit(char *device, int bandrate)
  */
 int OpenDevice(char *dev)
 {
-	int fd = open(dev, O_RDWR | O_NONBLOCK);         //| O_NOCTTY | O_NDELAY
+	int fd = open(dev, O_RDWR);         //阻塞模式打开 | O_NOCTTY | O_NDELAY | O_NONBLOCK
  	if (-1 == fd)
     {
    		printf("Can't Open Serial Port: %s.\n", dev);

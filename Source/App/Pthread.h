@@ -13,7 +13,7 @@
 #define _PTHREAD_H_
 
 
-int TCP_Client2Uart(char *ipAddress);
+int TCP_Client2Uart(void);
 int TCP_Server2Uart(void);
 int UDP2Uart(void);
 

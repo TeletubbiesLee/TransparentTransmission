@@ -24,6 +24,7 @@
 #include "../Struct2Json/ConfigFile.h"
 
 
+
 static void Net2UartPthread(void *param);
 static void Uart2NetPthread(void *param);
 static void UDP2UartPthread(void *param);
@@ -35,7 +36,7 @@ static void Uart2UDPPthread(void *param);
  * @param ipAddress IP地址，格式："192.168.1.1"
  * @return 成功0或失败-1
  */
-int TCP_Client2Uart(char *ipAddress)
+int TCP_Client2Uart(void)
 {
 	int uartfd, sockfd;		//串口和网卡设备的文件描述符
 	int fdArray[2] = {0};	//存放网络socket和串口的描述符
@@ -43,10 +44,10 @@ int TCP_Client2Uart(char *ipAddress)
 	int ret = -1;
 	void *status;
 
-	sockfd = TCP_NetConnect(g_ConfigFile[LOCAL_PORT_NUM].configData, ipAddress);		//连接网口
+	sockfd = TCP_NetConnect(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString, g_ConfigFile[REMOTE_PORT_NUM].configData);//连接网口
 	uartfd = UartInit(g_ConfigFile[UART_DEVICE_NAME_NUM].configString, g_ConfigFile[UART_BANDRATE_NUM].configData);	//打开串口
 
-	fdArray[0] = sockfd;
+	fdArray[0] = (int)&sockfd;
 	fdArray[1] = uartfd;
 
 	/* 常见网口与串口透传的线程 */
@@ -82,7 +83,7 @@ TCP_CLIENT_CLOSE:
 int TCP_Server2Uart(void)
 {
 	int uartfd, sockfd, clientfd;
-	int fdArray[2] = {0};	//存放网络socket和串口的描述符
+	int fdArray[3] = {0};	//存放网络socket和串口的描述符
 	pthread_t net2UartPid, uart2NetPid;		//网口与串口转换的线程ID号
 	int ret = -1;
 	void *status;
@@ -90,6 +91,7 @@ int TCP_Server2Uart(void)
 	sockfd = TCP_NetListen(g_ConfigFile[LOCAL_PORT_NUM].configData);
 	uartfd = UartInit(g_ConfigFile[UART_DEVICE_NAME_NUM].configString, g_ConfigFile[UART_BANDRATE_NUM].configData);	//打开串口
 	clientfd = TCP_NetAccept(sockfd);
+
 
 	fdArray[0] = clientfd;
 	fdArray[1] = uartfd;
@@ -175,15 +177,16 @@ UDP_CLOSE:
  */
 static void Net2UartPthread(void *param)
 {
-    int sockfd, uartfd;
+    int *socketfd, uartfd;
     int recvBytes = 0;      //接收到的字节数
     char bufReceive[MAX_DATA_SIZE] = {0};       //接收缓存区
 
-    sockfd = ((int*)param)[0];
+    socketfd = (int*)((int*)param)[0];
     uartfd = ((int*)param)[1];
+
     while(1)
     {
-        recvBytes = recv(sockfd, bufReceive, MAX_DATA_SIZE, 0);
+        recvBytes = recv(*socketfd, bufReceive, MAX_DATA_SIZE, 0);
         if(recvBytes > 0)
         {
             if(write(uartfd, bufReceive, recvBytes) == -1)
@@ -192,6 +195,19 @@ static void Net2UartPthread(void *param)
                 continue;
             }
             memset(bufReceive, 0, MAX_DATA_SIZE);
+        }
+        else if(recvBytes == 0)
+        {
+        	shutdown(*socketfd, SHUT_RDWR);
+        	*socketfd = -1;
+        	printf("connect close!\n");
+
+        	while(*socketfd == -1)		//重新连接远程端口
+        	{
+        		*socketfd = TCP_NetConnect(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString,
+        					g_ConfigFile[REMOTE_PORT_NUM].configData);
+            	sleep(1);
+        	}
         }
     } 
 }
@@ -204,18 +220,19 @@ static void Net2UartPthread(void *param)
  */
 static void Uart2NetPthread(void *param)
 {
-    int sockfd, uartfd;
+    int *socketfd, uartfd;
     int nread = 0;
     char bufSend[MAX_DATA_SIZE] = {0};
 
-    sockfd = ((int*)param)[0];
+    socketfd = (int*)((int*)param)[0];
     uartfd = ((int*)param)[1];
+
     while(1)
     {
         nread = read(uartfd, bufSend, sizeof(bufSend));
         if (nread > 0)
         {
-            if (send(sockfd, bufSend, nread, 0) == -1)
+            if (send(*socketfd, bufSend, nread, 0) == -1)
             {
                 printf("send error！\r\n");
                 continue;

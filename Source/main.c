@@ -10,7 +10,6 @@
  */
 
 
-#include "./Struct2Json/ConfigFile.h"
 #include "./Struct2Json/JsonFileOperation.h"
 #include "./App/Pthread.h"
 
@@ -23,7 +22,7 @@ int main(int argc, char *argv[])
 	Struct2JsonInit();
 	GetJsonFile();
 
-	UDP2Uart();
+	TCP_Client2Uart();
 	return 0;
 }
 

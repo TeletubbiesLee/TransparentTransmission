@@ -23,11 +23,11 @@
 
 /**
  * @breif 打开网口设备
- * @param serverPort 服务端串口号
  * @param ipAddress IP地址，格式："192.168.1.1"
+ * @param serverPort 服务端串口号
  * @return 设备文件描述符或-1
  */
-int TCP_NetConnect(int serverPort, char *ipAddress)
+int TCP_NetConnect(char *ipAddress, int serverPort)
 {
     int sockfd = -1;
     struct hostent *host;
@@ -51,7 +51,7 @@ int TCP_NetConnect(int serverPort, char *ipAddress)
 	bzero(&(serverAddr.sin_zero), 8);
 	if (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(struct sockaddr)) == -1)
 	{
-		printf("connect error!");
+		printf("TCP_NetConnect:connect error!\n");
 		return -1;
 	}
 
