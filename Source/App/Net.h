@@ -20,6 +20,7 @@
 int TCP_NetConnect(char *ipAddress, int serverPort);
 int TCP_NetListen(int serverPort);
 int TCP_NetAccept(int sockfd);
+void TCP_CloseConnect(int *sockfd);
 int UDP_NetConnect(int serverPort);
 void SetNetNonBlock(int sockfd);
 void SetRemoteAddress(struct sockaddr_in *remoteAddr);

@@ -22,19 +22,7 @@ int main(int argc, char *argv[])
 	Struct2JsonInit();
 	GetJsonFile();
 
-#if (RUN_NET_PROTOCOL == TCP_CLIENT)
-
-	TCP_Client2Uart();
-
-#elif (RUN_NET_PROTOCOL == TCP_SERVER)
-
-	TCP_Server2Uart();
-
-#elif (RUN_NET_PROTOCOL == UDP_PROTOCOL)
-
 	UDP2Uart();
-
-#endif
 
 	return 0;
 }

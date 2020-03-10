@@ -22,7 +22,7 @@
 
 
 /**
- * @breif 打开网口设备
+ * @breif 打开网口设备并TCP连接
  * @param ipAddress IP地址，格式："192.168.1.1"
  * @param serverPort 服务端串口号
  * @return 设备文件描述符或-1
@@ -122,7 +122,20 @@ int TCP_NetAccept(int sockfd)
 
 
 /**
- * @breif 打开网口设备
+ * @breif 关闭TCP连接
+ * @param sockfd 要关闭的socket的指针
+ * @return void
+ */
+void TCP_CloseConnect(int *sockfd)
+{
+	while(shutdown(*sockfd, SHUT_RDWR));		//关闭连接
+	*sockfd = -1;
+	printf("connect close!\n");
+}
+
+
+/**
+ * @breif 打开网口设备并UDP连接
  * @param serverPort 服务端串口号
  * @return 设备文件描述符或-1
  */
@@ -154,7 +167,7 @@ int UDP_NetConnect(int serverPort)
 
 
 /**
- * @breif 打开串口设备
+ * @breif 设置网口非阻塞模式
  * @param sockfd 网口文件描述符
  * @return void
  */
@@ -168,7 +181,7 @@ void SetNetNonBlock(int sockfd)
 
 
 /**
- * @breif 打开串口设备
+ * @breif 设置远端IP和端口信息
  * @param remoteAddr 远端IP地址和端口号设置
  * @return void
  */
@@ -178,6 +191,8 @@ void SetRemoteAddress(struct sockaddr_in *remoteAddr)
 	remoteAddr->sin_port = htons(g_ConfigFile[REMOTE_PORT_NUM].configData);
 	remoteAddr->sin_addr.s_addr = inet_addr(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString);
 }
+
+
 
 
 

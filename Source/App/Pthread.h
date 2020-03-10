@@ -12,10 +12,6 @@
 #ifndef _PTHREAD_H_
 #define _PTHREAD_H_
 
-#define TCP_CLIENT			0
-#define TCP_SERVER			1
-#define UDP_PROTOCOL		2
-#define RUN_NET_PROTOCOL 	TCP_SERVER		//该项为配置项
 
 int TCP_Client2Uart(void);
 int TCP_Server2Uart(void);
