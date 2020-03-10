@@ -202,12 +202,10 @@ static void Net2UartPthread(void *param)
         	*socketfd = -1;
         	printf("connect close!\n");
 
-        	while(*socketfd == -1)		//重新连接远程端口
-        	{
-        		*socketfd = TCP_NetConnect(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString,
-        					g_ConfigFile[REMOTE_PORT_NUM].configData);
-            	sleep(1);
-        	}
+			*socketfd = TCP_NetConnect(g_ConfigFile[REMOTE_IP_ADDRESS_NUM].configString,
+						g_ConfigFile[REMOTE_PORT_NUM].configData);		//重新连接服务端
+			if(*socketfd == -1)
+				return;
         }
     } 
 }
