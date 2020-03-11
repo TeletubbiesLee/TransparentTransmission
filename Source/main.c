@@ -16,7 +16,11 @@
 
 
 
-
+/**
+ * @breif main函数
+ * @param
+ * @return
+ */
 int main(int argc, char *argv[])
 {
 	Struct2JsonInit();

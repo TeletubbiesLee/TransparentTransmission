@@ -54,13 +54,13 @@ uint8_t CreateJsonFile(void)
 
     uint16_t length = GetConfigFileLength();    //获取长度
 
-    FilePositon = open("ConfigFile.json", O_RDWR | O_CREAT | O_TRUNC); //在根目录下创建一个可读写文件
+    FilePositon = open("NetUartConfigFile.json", O_RDWR | O_CREAT | O_TRUNC); //在根目录下创建一个可读写文件
     if(FilePositon < 0)
 	{
 		return 1;
 	}
     
-    writeNum = write(FilePositon, "{\"ConfigFile\":[ \n", strlen("{\"ConfigFile\":[ \n"));    //依照标准格式进行写入
+    writeNum = write(FilePositon, "{\"NetUartConfigFile\":[ \n", strlen("{\"NetUartConfigFile\":[ \n"));    //依照标准格式进行写入
     
     for(i = 0; i < length; i++)
     {
@@ -114,7 +114,7 @@ uint8_t GetJsonFile(void)
 	cJSON * _item;
 	int i, j;
 
-	FilePositon = open("ConfigFile.json", O_RDONLY); //在sojo目录下创建一个可读写文件
+	FilePositon = open("NetUartConfigFile.json", O_RDONLY); //在sojo目录下创建一个可读写文件
 	if(FilePositon < 0)
     {
         goto JSON_RES;

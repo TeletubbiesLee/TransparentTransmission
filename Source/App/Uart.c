@@ -38,13 +38,13 @@ static int BandrateArray[] = {
  */
 int UartInit(char *device, int bandrate)
 {
-	int uartfd = -1;
+	int uartFd = -1;
 	int ret = 0;
 
-	uartfd = OpenDevice(device);
-	if (uartfd > 0)
+	uartFd = OpenDevice(device);
+	if (uartFd > 0)
 	{
-		SetSpeed(uartfd, bandrate);
+		SetSpeed(uartFd, bandrate);
 	}
 	else
 	{
@@ -52,16 +52,16 @@ int UartInit(char *device, int bandrate)
 		return -1;
 	}
 
-	ret = SetParity(uartfd, g_ConfigFile[UART_DATA_BITS_NUM].configData,
+	ret = SetParity(uartFd, g_ConfigFile[UART_DATA_BITS_NUM].configData,
 			g_ConfigFile[UART_STOP_BITS_NUM].configData, g_ConfigFile[UART_PARITY_NUM].configData);
 	if (1 == ret)
 	{
 		printf("Set Parity Error\n");
-		close(uartfd);
+		close(uartFd);
 		return -1;
 	}
 
-	return uartfd;
+	return uartFd;
 }
 
 
@@ -93,9 +93,10 @@ int OpenDevice(char *dev)
  */
 void SetSpeed(int fd, int speed)
 {
-	int i;
-	int status;
+	int i = 0;
+	int status = 0;
 	struct termios opt;
+
 	tcgetattr(fd, &opt);
 
 	for(i = 0; i < sizeof(SpeedArray) / sizeof(int); i++)

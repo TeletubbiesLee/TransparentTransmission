@@ -29,8 +29,8 @@
  */
 int TCP_NetConnect(char *ipAddress, int serverPort)
 {
-    int sockfd = -1;
-    struct hostent *host;
+    int socketFd = -1;
+    struct hostent *host = NULL;
     struct sockaddr_in serverAddr;
 
     if((host = gethostbyname(ipAddress)) == NULL)
@@ -39,7 +39,7 @@ int TCP_NetConnect(char *ipAddress, int serverPort)
 		return -1;
 	}
 
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    if ((socketFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
 		printf("socket create error!");
 		return -1;
@@ -49,13 +49,13 @@ int TCP_NetConnect(char *ipAddress, int serverPort)
 	serverAddr.sin_port = htons(serverPort);
 	serverAddr.sin_addr = *((struct in_addr *)host->h_addr);
 	bzero(&(serverAddr.sin_zero), 8);
-	while (connect(sockfd, (struct sockaddr *)&serverAddr, sizeof(struct sockaddr)) == -1)
+	while (connect(socketFd, (struct sockaddr *)&serverAddr, sizeof(struct sockaddr)) == -1)
 	{
 		printf("TCP_NetConnect:connect error!\n");
 		sleep(1);
 	}
 
-    return sockfd;
+    return socketFd;
 }
 
 
@@ -66,10 +66,10 @@ int TCP_NetConnect(char *ipAddress, int serverPort)
  */
 int TCP_NetListen(int serverPort)
 {
-    int sockfd = -1;
+    int socketFd = -1;
     struct sockaddr_in loaclAddr;     /* loacl */
 
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    if ((socketFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
 		printf("socket fail!");
         return -1;
@@ -80,19 +80,19 @@ int TCP_NetListen(int serverPort)
 	loaclAddr.sin_addr.s_addr = INADDR_ANY;
 	bzero(&(loaclAddr.sin_zero), 8);
 
-	if (bind(sockfd, (struct sockaddr *)&loaclAddr, sizeof(struct sockaddr)) == -1)
+	if (bind(socketFd, (struct sockaddr *)&loaclAddr, sizeof(struct sockaddr)) == -1)
 	{
 		printf("bind error!\n");
 		return -1;
 	}
 
-	if (listen(sockfd, BACKLOG) == -1)
+	if (listen(socketFd, BACKLOG) == -1)
 	{
 		printf("listen error!\n");
 		return -1;
 	}
 
-    return sockfd;
+    return socketFd;
 }
 
 
@@ -101,15 +101,15 @@ int TCP_NetListen(int serverPort)
  * @param sockfd 服务端socket文件描述符
  * @return 设备文件描述符或-1
  */
-int TCP_NetAccept(int sockfd)
+int TCP_NetAccept(int socketFd)
 {
-    int clientfd = -1;
+    int clientFd = -1;
     struct sockaddr_in remoteAddr;
-    socklen_t sinSize;
+    socklen_t sinSize = 0;
 
     sinSize = sizeof(struct sockaddr_in);
 
-	while ((clientfd = accept(sockfd, (struct sockaddr *)&remoteAddr, &sinSize)) == -1)
+	while ((clientFd = accept(socketFd, (struct sockaddr *)&remoteAddr, &sinSize)) == -1)
 	{
 		printf("accept error\n");
 		sleep(1);
@@ -117,7 +117,7 @@ int TCP_NetAccept(int sockfd)
 
 	printf("Receive From： %s\n", inet_ntoa(remoteAddr.sin_addr));
 
-    return clientfd;
+    return clientFd;
 }
 
 
@@ -126,11 +126,12 @@ int TCP_NetAccept(int sockfd)
  * @param sockfd 要关闭的socket的指针
  * @return void
  */
-void TCP_CloseConnect(int *sockfd)
+int TCP_CloseConnect(int *socketFd)
 {
-	while(shutdown(*sockfd, SHUT_RDWR));		//关闭连接
-	*sockfd = -1;
+	while(shutdown(*socketFd, SHUT_RDWR));		//关闭连接
+	*socketFd = -1;
 	printf("connect close!\n");
+	return 0;
 }
 
 
@@ -141,10 +142,10 @@ void TCP_CloseConnect(int *sockfd)
  */
 int UDP_NetConnect(int serverPort)
 {
-    int sockfd = -1;
+    int socketFd = -1;
     struct sockaddr_in localAddr;         /* loacl */
 
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+    if ((socketFd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
 		printf("socket fail!");
         return -1;
@@ -156,13 +157,13 @@ int UDP_NetConnect(int serverPort)
 
 	bzero(&(localAddr.sin_zero), 8);
 
-	if (bind(sockfd, (struct sockaddr *)&localAddr, sizeof(struct sockaddr)) == -1)
+	if (bind(socketFd, (struct sockaddr *)&localAddr, sizeof(struct sockaddr)) == -1)
 	{
 		printf("bind error!");
 		return -1;
 	}
 
-    return sockfd;
+    return socketFd;
 }
 
 
@@ -171,12 +172,12 @@ int UDP_NetConnect(int serverPort)
  * @param sockfd 网口文件描述符
  * @return void
  */
-void SetNetNonBlock(int sockfd)
+void SetNetNonBlock(int socketFd)
 {
     int flags;
     
-    flags = fcntl(sockfd, F_GETFL, 0);				//获取原始sockfd属性
-	fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);		//添加非阻塞
+    flags = fcntl(socketFd, F_GETFL, 0);				//获取原始sockfd属性
+	fcntl(socketFd, F_SETFL, flags | O_NONBLOCK);		//添加非阻塞
 }
 
 
