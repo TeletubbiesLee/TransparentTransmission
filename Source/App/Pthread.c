@@ -29,8 +29,10 @@ static void Client2UartPthread(void *param);
 static void Server2UartPthread(void *param);
 static void Uart2ClientPthread(void *param);
 static void Uart2ServerPthread(void *param);
-static void UDP2UartPthread(void *param);
-static void Uart2UDPPthread(void *param);
+static void UartSendPthread(void *param);
+static void UartReceivePthread(void *param);
+static void UDPSendPthread(void *param);
+static void UDPReceivePthread(void *param);
 
 
 /**
@@ -133,40 +135,73 @@ TCP_SERVER_CLOSE:
 int UDP2Uart(void)
 {
 	int uartfd, sockfd;
-	int fdArray[3] = {0};	//存放网络socket和串口的描述符
-	pthread_t udp2UartPid, uart2UdpPid;		//网口与串口转换的线程ID号
+	int uart2UdpPipe[2] = {0}, udp2UartPipe[2] = {0};		//串口转UDP的管道识别号，UDP转串口的管道识别号
+	int paramArray[4][3] = {{0}, {0}, {0}, {0}};			//用于给线程传递参数
+	pthread_t udpSendtPid, uartSendPid, udpReceive, uartReceive;		//网口与串口转换的线程ID号
 	struct sockaddr_in remoteAddr;
 	int ret = -1;
 	void *status;
+
+	/* 建立管道pipe */
+	if(pipe(uart2UdpPipe) < 0)
+	{
+		printf("uart to udp pipe error!\n");
+	}
+	if(pipe(udp2UartPipe) < 0)
+	{
+		printf("udp to uart pipe error!\n");
+	}
 
 	/* 连接UDP并建立socket，打开串口，设置远端配置的IP和端口号 */
 	sockfd = UDP_NetConnect(g_ConfigFile[LOCAL_PORT_NUM].configData);
 	uartfd = UartInit(g_ConfigFile[UART_DEVICE_NAME_NUM].configString, g_ConfigFile[UART_BANDRATE_NUM].configData);
 	SetRemoteAddress(&remoteAddr);
 
-	/* 将串口描述符，socket号以及远端配置信息结构体指针作为参数传给透传线程 */
-	fdArray[0] = uartfd;
-	fdArray[1] = sockfd;
-	fdArray[2] = (int)&remoteAddr;
 
 	/* 网口与串口透传的线程 */
-	ret = pthread_create(&udp2UartPid, NULL, (void*)UDP2UartPthread, fdArray);
+	paramArray[0][0] = uartfd;
+	paramArray[0][1] = uart2UdpPipe[1];
+	ret = pthread_create(&uartReceive, NULL, (void*)UartReceivePthread, paramArray[0]);
 	if(0 != ret)
 	{
-		printf("pthread UDP2Uart create error!\n");
+		printf("pthread Uart Receive create error!\n");
 		goto UDP_CLOSE;
 	}
 
-	ret = pthread_create(&uart2UdpPid, NULL, (void*)Uart2UDPPthread, fdArray);
+	paramArray[1][0] = sockfd;
+	paramArray[1][1] = udp2UartPipe[1];
+	paramArray[1][2] = (int)&remoteAddr;
+	ret = pthread_create(&udpReceive, NULL, (void*)UDPReceivePthread, paramArray[1]);
 	if(0 != ret)
 	{
-		printf("pthread Uart2UDP create error!\n");
+		printf("pthread UDP Receive create error!\n");
+		goto UDP_CLOSE;
+	}
+
+	paramArray[2][0] = uartfd;
+	paramArray[2][1] = udp2UartPipe[0];
+	ret = pthread_create(&uartSendPid, NULL, (void*)UartSendPthread, paramArray[2]);
+	if(0 != ret)
+	{
+		printf("pthread Uart Send create error!\n");
+		goto UDP_CLOSE;
+	}
+
+	paramArray[3][0] = sockfd;
+	paramArray[3][1] = uart2UdpPipe[0];
+	paramArray[3][2] = (int)&remoteAddr;
+	ret = pthread_create(&udpSendtPid, NULL, (void*)UDPSendPthread, paramArray[3]);
+	if(0 != ret)
+	{
+		printf("pthread UDP Send create error!\n");
 		goto UDP_CLOSE;
 	}
 
 UDP_CLOSE:
-	pthread_join(udp2UartPid, &status);
-	pthread_join(uart2UdpPid, &status);
+	pthread_join(uartReceive, &status);
+	pthread_join(udpReceive, &status);
+	pthread_join(uartSendPid, &status);
+	pthread_join(udpSendtPid, &status);
 	close(sockfd);
 	close(uartfd);
 
@@ -313,68 +348,126 @@ static void Uart2ServerPthread(void *param)
 
 
 /**
- * @breif 网口UDP转发到串口的线程程序
- * @param param 整型数组，第一个数存放串口描述符，第二个数存放网络socket描述符，第三个存放远端信息结构体的指针
+ * @breif 串口发送的线程程序
+ * @param param 整型数组，第一个数存放串口描述符，第二个数存放读管道号
  * @return void
  */
-static void UDP2UartPthread(void *param)
+static void UartSendPthread(void *param)
 {
-    int uartfd, sockfd;
-    int recvBytes;		//接收字节数
-    struct sockaddr_in *remoteAddr = NULL;
-	char bufReceive[MAX_DATA_SIZE] = {0};		//接收缓存区
-    socklen_t sinSize = sizeof(struct sockaddr_in);
+    int uartfd, pipefd;
+    int dataBytes;		//数据字节数
+	char dataBuffer[MAX_DATA_SIZE] = {0};		//数据缓存区
 
     uartfd = ((int*)param)[0];
-    sockfd = ((int*)param)[1];
-    remoteAddr = (struct sockaddr_in *)((int*)param)[2];
+    pipefd = ((int*)param)[1];
 
     while(1)
     {
-        recvBytes = recvfrom(sockfd, bufReceive, sizeof(bufReceive)-1, 0, (struct sockaddr *)remoteAddr, &sinSize);
-        if(recvBytes > 0)
-        {
-            if (write(uartfd, bufReceive, recvBytes) == -1)
-            {
-                printf("write error！\r\n");
-                continue;
-            }
-            memset(bufReceive, 0, MAX_DATA_SIZE);
-        }
+    	/* 从管道中读取数据 */
+    	dataBytes = read(pipefd, dataBuffer, sizeof(dataBuffer));
+    	if(dataBytes > 0)
+    	{
+			if (write(uartfd, dataBuffer, dataBytes) == -1)
+			{
+				printf("write error！\r\n");
+				continue;
+			}
+			memset(dataBuffer, 0, MAX_DATA_SIZE);
+    	}
     }
-    
 }
 
 
 /**
- * @breif 串口接口转发到网口UDP的线程程序
- * @param param 整型数组，第一个数存放串口描述符，第二个数存放网络socket描述符，第三个存放远端信息结构体的指针
+ * @breif 串口接收的线程程序
+ * @param param 整型数组，第一个数存放串口描述符，第二个数存放写管道号
  * @return void
  */
-void Uart2UDPPthread(void *param)
+static void UartReceivePthread(void *param)
 {
-    int uartfd, sockfd;
-    char bufSend[MAX_DATA_SIZE] = {0};		//发送缓存区
-	int nread = 0;			//发送字节数
+    int uartfd, pipefd;
+    char dataBuffer[MAX_DATA_SIZE] = {0};		//数据缓存区
+	int dataBytes = 0;			//数据字节数
+
+    uartfd = ((int*)param)[0];
+    pipefd = ((int*)param)[1];
+
+    while(1)
+	{
+    	dataBytes = read(uartfd, dataBuffer, sizeof(dataBuffer));
+		if (dataBytes > 0)
+		{
+			/* 将接收到的数据写入管道 */
+			write(pipefd, dataBuffer, dataBytes);
+			memset(dataBuffer, 0, MAX_DATA_SIZE);
+		}
+	}
+}
+
+
+/**
+ * @breif UDP发送的线程程序
+ * @param param 整型数组，第一个数存放网络socket描述符，第二个数存放读管道号，第三个存放远端信息结构体的指针
+ * @return void
+ */
+static void UDPSendPthread(void *param)
+{
+    int sockfd, pipefd;
+    char dataBuffer[MAX_DATA_SIZE] = {0};		//数据缓存区
+	int dataBytes = 0;			//数据字节数
     struct sockaddr_in *remoteAddr = NULL;
     socklen_t sinSize = sizeof(struct sockaddr_in);
 
-    uartfd = ((int*)param)[0];
-    sockfd = ((int*)param)[1];
+    sockfd = ((int*)param)[0];
+    pipefd = ((int*)param)[1];
     remoteAddr = (struct sockaddr_in *)((int*)param)[2];
 
     while(1)
 	{
-		nread = read(uartfd, bufSend, sizeof(bufSend));
-		if (nread > 0)
-		{
-			if (sendto(sockfd, bufSend, nread, 0, (struct sockaddr *)remoteAddr, sinSize) == -1)
+		/* 从管道中读取数据 */
+    	dataBytes = read(pipefd, dataBuffer, sizeof(dataBuffer));
+    	if(dataBytes > 0)
+    	{
+			if (sendto(sockfd, dataBuffer, dataBytes, 0, (struct sockaddr *)remoteAddr, sinSize) == -1)
 			{
 				printf("send error！\r\n");
 				continue;
 			}
-			memset(bufSend, 0, MAX_DATA_SIZE);
-		}
+			memset(dataBuffer, 0, MAX_DATA_SIZE);
+    	}
 	}
 }
+
+
+/**
+ * @breif UDP接收的线程程序
+ * @param param 整型数组，第一个数存放网络socket描述符，第二个数存放写管道号，第三个存放远端信息结构体的指针
+ * @return void
+ */
+static void UDPReceivePthread(void *param)
+{
+    int sockfd, pipefd;
+    int recvBytes;		//数据字节数
+    struct sockaddr_in *remoteAddr = NULL;
+	char dataBuffer[MAX_DATA_SIZE] = {0};		//数据缓存区
+    socklen_t sinSize = sizeof(struct sockaddr_in);
+
+    sockfd = ((int*)param)[0];
+    pipefd = ((int*)param)[1];
+    remoteAddr = (struct sockaddr_in *)((int*)param)[2];
+
+    while(1)
+    {
+        recvBytes = recvfrom(sockfd, dataBuffer, sizeof(dataBuffer)-1, 0, (struct sockaddr *)remoteAddr, &sinSize);
+        if(recvBytes > 0)
+        {
+            /* 将接收到的数据写入管道 */
+        	write(pipefd, dataBuffer, recvBytes);
+            memset(dataBuffer, 0, MAX_DATA_SIZE);
+        }
+    }
+
+}
+
+
 
