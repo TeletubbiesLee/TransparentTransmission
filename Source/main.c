@@ -10,6 +10,8 @@
  */
 
 
+#include <string.h>
+#include <stdio.h>
 #include "./Struct2Json/JsonFileOperation.h"
 #include "./App/Pthread.h"
 
@@ -23,10 +25,31 @@
  */
 int main(int argc, char *argv[])
 {
+	if(argc < 2)
+	{
+		printf("error: too few arguments to program \'%s\'!\n", argv[0]);
+		return -1;
+	}
 	Struct2JsonInit();
 	GetJsonFile();
 
-	UDP2Uart();
+	if(0 == strcmp("udp2uart", argv[1]))
+	{
+		UDP2Uart();
+	}
+	else if(0 == strcmp("tcpclient2uart", argv[1]))
+	{
+		TCP_Server2Uart();			//设备外接TCP客户端和串口，嵌入式设备对应内部程序为TCP服务器端转串口
+	}
+	else if(0 == strcmp("tcpserver2uart", argv[1]))
+	{
+		TCP_Client2Uart();			//设备外接TCP服务器端和串口，嵌入式设备对应内部程序为TCP客户端转串口
+	}
+	else
+	{
+		printf("error: arguments \'%s\' is wrong to program \'%s\'!\n", argv[1], argv[0]);
+		return -1;
+	}
 
 	return 0;
 }
