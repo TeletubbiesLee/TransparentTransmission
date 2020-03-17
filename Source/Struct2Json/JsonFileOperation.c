@@ -54,7 +54,7 @@ uint8_t CreateJsonFile(void)
 
     uint16_t length = GetConfigFileLength();    //获取长度
 
-    FilePositon = open("NetUartConfigFile.json", O_RDWR | O_CREAT | O_TRUNC); //在根目录下创建一个可读写文件
+    FilePositon = open(JSON_FILENAME, O_RDWR | O_CREAT | O_TRUNC); //在根目录下创建一个可读写文件
     if(FilePositon < 0)
 	{
 		return 1;
@@ -64,7 +64,7 @@ uint8_t CreateJsonFile(void)
     
     for(i = 0; i < length; i++)
     {
-        cJSON* struct_json = ConfigFile_StructToJson(&g_ConfigFile[i]);
+        cJSON* struct_json = ConfigFile_StructToJson(&g_JsonFile[i]);
         
         string = vPort_Print_cJSON(struct_json);
 
@@ -114,7 +114,7 @@ uint8_t GetJsonFile(void)
 	cJSON * _item;
 	int i, j;
 
-	FilePositon = open("NetUartConfigFile.json", O_RDONLY); //在sojo目录下创建一个可读写文件
+	FilePositon = open(JSON_FILENAME, O_RDONLY); //在sojo目录下创建一个可读写文件
 	if(FilePositon < 0)
     {
         goto JSON_RES;
@@ -154,7 +154,7 @@ uint8_t GetJsonFile(void)
 					if (cJSON_Object == _item->type)
 					{
 						/* deserialize Student structure object */
-						g_ConfigFile[j] = * ConfigFile_JsonToStruct(_item);
+						g_JsonFile[j] = * ConfigFile_JsonToStruct(_item);
 					}
 				}
 			}

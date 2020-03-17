@@ -19,6 +19,8 @@
 #define DIS_ENABLE  0               //禁止
 #define ENABLE      !DIS_ENABLE     //使能
 
+#define JSON_FILENAME "NetUartConfigFile.json"
+
 #define PARAM_ERROR  -1   //参数错误
 
 #define CHECK_PARAM(parameter) {parameter > 1 ? PARAM_ERROR : 1}    //检测参数
@@ -53,7 +55,7 @@ typedef struct tagConfiguiation
 
 /****************************全局变量定义****************************/
 extern ConfigFile g_ConfigFile[];
-
+extern ConfigFile *g_JsonFile;
 
 /****************************函数定义****************************/
 extern uint16_t GetConfigFileLength(void);
