@@ -39,7 +39,7 @@ int TCP_NetConnect(char *ipAddress, int serverPort)
 		return -1;
 	}
 
-    if ((socketFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    if((socketFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
 		printf("socket create error!");
 		return -1;
@@ -49,7 +49,7 @@ int TCP_NetConnect(char *ipAddress, int serverPort)
 	serverAddr.sin_port = htons(serverPort);
 	serverAddr.sin_addr = *((struct in_addr *)host->h_addr);
 	bzero(&(serverAddr.sin_zero), 8);
-	while (connect(socketFd, (struct sockaddr *)&serverAddr, sizeof(struct sockaddr)) == -1)
+	while(connect(socketFd, (struct sockaddr *)&serverAddr, sizeof(struct sockaddr)) == -1)
 	{
 		printf("TCP_NetConnect:connect error!\n");
 		sleep(1);
@@ -80,13 +80,13 @@ int TCP_NetListen(int serverPort)
 	loaclAddr.sin_addr.s_addr = INADDR_ANY;
 	bzero(&(loaclAddr.sin_zero), 8);
 
-	if (bind(socketFd, (struct sockaddr *)&loaclAddr, sizeof(struct sockaddr)) == -1)
+	if(bind(socketFd, (struct sockaddr *)&loaclAddr, sizeof(struct sockaddr)) == -1)
 	{
 		printf("bind error!\n");
 		return -1;
 	}
 
-	if (listen(socketFd, BACKLOG) == -1)
+	if(listen(socketFd, BACKLOG) == -1)
 	{
 		printf("listen error!\n");
 		return -1;
@@ -109,7 +109,7 @@ int TCP_NetAccept(int socketFd)
 
     sinSize = sizeof(struct sockaddr_in);
 
-	while ((clientFd = accept(socketFd, (struct sockaddr *)&remoteAddr, &sinSize)) == -1)
+	while((clientFd = accept(socketFd, (struct sockaddr *)&remoteAddr, &sinSize)) == -1)
 	{
 		printf("accept error\n");
 		sleep(1);
@@ -145,7 +145,7 @@ int UDP_NetConnect(int serverPort)
     int socketFd = -1;
     struct sockaddr_in localAddr;         /* loacl */
 
-    if ((socketFd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+    if((socketFd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
 		printf("socket fail!");
         return -1;
@@ -157,7 +157,7 @@ int UDP_NetConnect(int serverPort)
 
 	bzero(&(localAddr.sin_zero), 8);
 
-	if (bind(socketFd, (struct sockaddr *)&localAddr, sizeof(struct sockaddr)) == -1)
+	if(bind(socketFd, (struct sockaddr *)&localAddr, sizeof(struct sockaddr)) == -1)
 	{
 		printf("bind error!");
 		return -1;

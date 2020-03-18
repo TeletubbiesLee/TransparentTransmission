@@ -19,7 +19,7 @@
 #define DIS_ENABLE  0               //禁止
 #define ENABLE      !DIS_ENABLE     //使能
 
-#define JSON_FILENAME "NetUartConfigFile.json"
+#define JSON_FILENAME "NetUartConfigFile.json"			//配置json文件名
 
 #define PARAM_ERROR  -1   //参数错误
 
@@ -58,7 +58,7 @@ extern ConfigFile g_ConfigFile[];
 extern ConfigFile *g_JsonFile;
 
 /****************************函数定义****************************/
-extern uint16_t GetConfigFileLength(void);
+extern int GetConfigFileLength(void);
 
 
 /**********************************END**********************************/

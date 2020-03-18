@@ -84,7 +84,7 @@ ConfigFile *g_JsonFile = g_ConfigFile;
  * @brief 获取配置文件结构体数组长度
  * @return 返回数组长度
  */
-inline uint16_t GetConfigFileLength(void)
+inline int GetConfigFileLength(void)
 {
     return (sizeof(g_ConfigFile) / sizeof(g_ConfigFile[0]));    //配置文件结构体数组长度;
 }
