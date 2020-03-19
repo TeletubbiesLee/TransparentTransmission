@@ -1,6 +1,6 @@
 /**
- * @file Pthread.c
- * @brief 线程相关的程序文件
+ * @file Task.c
+ * @brief 任务相关的程序文件
  * @copyright Copyright (c) 2020 Beijing SOJO Electric CO., LTD.
  * @company  SOJO
  * @date 2020.02.17
@@ -18,7 +18,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <Pthread.h>
-#include "Pthread.h"
+#include "Task.h"
 #include "Net.h"
 #include "Uart.h"
 #include "../Struct2Json/ConfigFile.h"
@@ -301,7 +301,6 @@ static void TCPClientSendPthread(void *param)
                 printf("send error！\r\n");
                 continue;
             }
-            memset(dataBuffer, 0, MAX_DATA_SIZE);
         }
     }
 }
@@ -331,7 +330,6 @@ static void TCPClientReceivePthread(void *param)
                 printf("write error！\r\n");
                 continue;
             }
-            memset(dataBuffer, 0, MAX_DATA_SIZE);
         }
         else if(dataBytes == 0)		//远端断开连接
         {
@@ -370,7 +368,6 @@ static void TCPServerSendPthread(void *param)
                 printf("send error！\r\n");
                 continue;
             }
-            memset(dataBuffer, 0, MAX_DATA_SIZE);
         }
     }
 }
@@ -401,7 +398,6 @@ static void TCPServerReceivePthread(void *param)
                 printf("write error！\r\n");
                 continue;
             }
-            memset(dataBuffer, 0, MAX_DATA_SIZE);
         }
         else if(dataBytes == 0)			//远端断开连接
         {
@@ -443,7 +439,6 @@ static void UDPSendPthread(void *param)
 				printf("send error！\r\n");
 				continue;
 			}
-			memset(dataBuffer, 0, MAX_DATA_SIZE);
     	}
 	}
 }
@@ -472,8 +467,11 @@ static void UDPReceivePthread(void *param)
         if(dataBytes > 0)
         {
             /* 将接收到的数据写入管道 */
-        	write(pipeWriteFd, dataBuffer, dataBytes);
-            memset(dataBuffer, 0, MAX_DATA_SIZE);
+        	if(write(pipeWriteFd, dataBuffer, dataBytes) == -1)
+        	{
+        		printf("write error！\r\n");
+        		continue;
+        	}
         }
     }
 
@@ -505,7 +503,6 @@ static void UartSendPthread(void *param)
 				printf("write error！\r\n");
 				continue;
 			}
-			memset(dataBuffer, 0, MAX_DATA_SIZE);
     	}
     }
 }
@@ -531,8 +528,11 @@ static void UartReceivePthread(void *param)
 		if (dataBytes > 0)
 		{
 			/* 将接收到的数据写入管道 */
-			write(pipeWriteFd, dataBuffer, dataBytes);
-			memset(dataBuffer, 0, MAX_DATA_SIZE);
+			if(write(pipeWriteFd, dataBuffer, dataBytes) == -1)
+			{
+				printf("write error！\r\n");
+				continue;
+			}
 		}
 	}
 }

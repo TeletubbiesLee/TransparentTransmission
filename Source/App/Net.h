@@ -13,7 +13,7 @@
 #define _NET_H_
 
 
-#define MAX_DATA_SIZE       100
+#define MAX_DATA_SIZE       1600
 #define BACKLOG 			10		/* max client */
 
 

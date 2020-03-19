@@ -1,6 +1,6 @@
 /**
- * @file Pthread.c
- * @brief 线程相关的程序文件
+ * @file Task.c
+ * @brief 任务相关的程序文件
  * @copyright Copyright (c) 2020 Beijing SOJO Electric CO., LTD.
  * @company  SOJO
  * @date 2020.02.17

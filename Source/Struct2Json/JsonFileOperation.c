@@ -60,7 +60,7 @@ uint8_t CreateJsonFile(void)
 		return 1;
 	}
     
-    writeNum = write(FilePositon, "{\"NetUartConfigFile\":[ \n", strlen("{\"NetUartConfigFile\":[ \n"));    //依照标准格式进行写入
+    writeNum = write(FilePositon, "{\"JsonConfigFile\":[ \n", strlen("{\"JsonConfigFile\":[ \n"));    //依照标准格式进行写入
     
     for(i = 0; i < length; i++)
     {
