@@ -13,21 +13,17 @@
 #ifndef __CONFIG_FILE_H
 #define	__CONFIG_FILE_H
 
-#include <stdint.h>
+#include "../Config.h"
 
 /****************************宏定义****************************/
 #define DIS_ENABLE  0               //禁止
 #define ENABLE      !DIS_ENABLE     //使能
 
-#define JSON_FILENAME "NetUartConfigFile.json"			//配置json文件名
 
 #define PARAM_ERROR  -1   //参数错误
 
 #define CHECK_PARAM(parameter) {parameter > 1 ? PARAM_ERROR : 1}    //检测参数
 
-#define CONFIG_STRUCT_MAX 30
-#define DATA_NAME_LENTH_MAX 20
-#define CONFIG_STRING_LENTH_MAX DATA_NAME_LENTH_MAX
 
 enum ConfigNumber
 {

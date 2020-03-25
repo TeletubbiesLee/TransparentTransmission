@@ -19,6 +19,7 @@
 #include <strings.h>
 #include "Net.h"
 #include "../Struct2Json/ConfigFile.h"
+#include "../Config.h"
 
 
 /**
@@ -35,14 +36,14 @@ int TCP_NetConnect(char *ipAddress, int serverPort)
 
     if((host = gethostbyname(ipAddress)) == NULL)
 	{
-		printf("gethostbyname error！");
-		return -1;
+    	printf_debug("gethostbyname error！");
+		return FUNCTION_FAIL;
 	}
 
     if((socketFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
-		printf("socket create error!");
-		return -1;
+    	printf_debug("socket create error!");
+		return FUNCTION_FAIL;
 	}
 
 	serverAddr.sin_family = AF_INET;
@@ -51,7 +52,7 @@ int TCP_NetConnect(char *ipAddress, int serverPort)
 	bzero(&(serverAddr.sin_zero), 8);
 	while(connect(socketFd, (struct sockaddr *)&serverAddr, sizeof(struct sockaddr)) == -1)
 	{
-		printf("TCP_NetConnect:connect error!\n");
+		printf_debug("TCP_NetConnect:connect error!\n");
 		sleep(1);
 	}
 
@@ -71,8 +72,8 @@ int TCP_NetListen(int serverPort)
 
     if ((socketFd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	{
-		printf("socket fail!");
-        return -1;
+    	printf_debug("socket fail!");
+        return FUNCTION_FAIL;
 	}
 
 	loaclAddr.sin_family = AF_INET;
@@ -82,14 +83,14 @@ int TCP_NetListen(int serverPort)
 
 	if(bind(socketFd, (struct sockaddr *)&loaclAddr, sizeof(struct sockaddr)) == -1)
 	{
-		printf("bind error!\n");
-		return -1;
+		printf_debug("bind error!\n");
+		return FUNCTION_FAIL;
 	}
 
 	if(listen(socketFd, BACKLOG) == -1)
 	{
-		printf("listen error!\n");
-		return -1;
+		printf_debug("listen error!\n");
+		return FUNCTION_FAIL;
 	}
 
     return socketFd;
@@ -111,7 +112,7 @@ int TCP_NetAccept(int socketFd)
 
 	while((clientFd = accept(socketFd, (struct sockaddr *)&remoteAddr, &sinSize)) == -1)
 	{
-		printf("accept error\n");
+		printf_debug("accept error\n");
 		sleep(1);
 	}
 
@@ -131,7 +132,7 @@ int TCP_CloseConnect(int *socketFd)
 	while(shutdown(*socketFd, SHUT_RDWR));		//关闭连接
 	*socketFd = -1;
 	printf("connect close!\n");
-	return 0;
+	return NO_ERROR;
 }
 
 
@@ -147,8 +148,8 @@ int UDP_NetConnect(int serverPort)
 
     if((socketFd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
 	{
-		printf("socket fail!");
-        return -1;
+    	printf_debug("socket fail!");
+        return FUNCTION_FAIL;
 	}
 
 	localAddr.sin_family = AF_INET;
@@ -159,8 +160,8 @@ int UDP_NetConnect(int serverPort)
 
 	if(bind(socketFd, (struct sockaddr *)&localAddr, sizeof(struct sockaddr)) == -1)
 	{
-		printf("bind error!");
-		return -1;
+		printf_debug("bind error!");
+		return FUNCTION_FAIL;
 	}
 
     return socketFd;

@@ -18,6 +18,7 @@
 #include <termios.h>
 #include "Uart.h"
 #include "../Struct2Json/ConfigFile.h"
+#include "../Config.h"
 
 
 static int SpeedArray[] = {
@@ -48,17 +49,17 @@ int UartInit(char *device, int bandrate)
 	}
 	else
 	{
-		printf("Error opening %s\n", device);
-		return -1;
+		printf_debug("Error opening %s\n", device);
+		return FUNCTION_FAIL;
 	}
 
 	ret = SetParity(uartFd, g_ConfigFile[UART_DATA_BITS_NUM].configData,
 			g_ConfigFile[UART_STOP_BITS_NUM].configData, g_ConfigFile[UART_PARITY_NUM].configData);
-	if (1 == ret)
+	if (FUNCTION_FAIL == ret)
 	{
-		printf("Set Parity Error\n");
+		printf_debug("Set Parity Error\n");
 		close(uartFd);
-		return -1;
+		return FUNCTION_FAIL;
 	}
 
 	return uartFd;
@@ -75,8 +76,8 @@ int OpenDevice(char *dev)
 	int fd = open(dev, O_RDWR);         //阻塞模式打开 | O_NOCTTY | O_NDELAY | O_NONBLOCK
  	if (-1 == fd)
     {
-   		printf("Can't Open Serial Port: %s.\n", dev);
-   		return -1;
+ 		printf_debug("Can't Open Serial Port: %s.\n", dev);
+   		return FUNCTION_FAIL;
 	}
     else
     {
@@ -109,7 +110,7 @@ void SetSpeed(int fd, int speed)
 			status = tcsetattr(fd, TCSANOW, &opt);
 			if(status != 0)
 			{
-				printf("tcsetattr fd1\n");
+				printf_debug("tcsetattr fd1\n");
 			}
 			return;
 		}
@@ -118,7 +119,7 @@ void SetSpeed(int fd, int speed)
 
 	if (i == 12)
     {
-		printf("\tSorry, please set the correct baud rate!\n");
+		printf_debug("\tSorry, please set the correct baud rate!\n");
 		PrintUartUsage();
 	}
 }
@@ -130,15 +131,15 @@ void SetSpeed(int fd, int speed)
  * @param dataBits 数据位，取值为：7 or 8
  * @param stopBits 停止位，取值为：1 or 2
  * @param parity 校验类型，取值为：N E O S
- * @return 成功:0 错误:1
+ * @return 成功:0 错误:-1
  */
 int SetParity(int fd, int dataBits, int stopBits, int parity)
 {
 	struct termios options;
 	if (tcgetattr(fd, &options) != 0)
 	{
-		printf("SetupSerial 1\n");
-		return 1;
+		printf_debug("SetupSerial 1\n");
+		return FUNCTION_FAIL;
 	}
 	options.c_cflag &= ~CSIZE;
 	switch (dataBits) /*设置数据位数*/
@@ -150,8 +151,8 @@ int SetParity(int fd, int dataBits, int stopBits, int parity)
 			options.c_cflag |= CS8;
 			break;
 		default:
-			printf("Unsupported data size\n");
-			return 1;
+			printf_debug("Unsupported data size\n");
+			return FUNCTION_FAIL;
 	}
 
 	switch (parity)
@@ -178,8 +179,8 @@ int SetParity(int fd, int dataBits, int stopBits, int parity)
 			options.c_cflag &= ~CSTOPB;
 			break;
 		default:
-			printf("Unsupported parity\n");
-			return 1;
+			printf_debug("Unsupported parity\n");
+			return FUNCTION_FAIL;
 	}
  	/* 设置停止位*/
   	switch (stopBits)
@@ -191,8 +192,8 @@ int SetParity(int fd, int dataBits, int stopBits, int parity)
 			options.c_cflag |= CSTOPB;
 			break;
 		default:
-			printf("Unsupported stop bits\n");
-			return 1;
+			printf_debug("Unsupported stop bits\n");
+			return FUNCTION_FAIL;
  	}
   	/* Set input parity option */
   	if (parity != 'n')
@@ -205,10 +206,10 @@ int SetParity(int fd, int dataBits, int stopBits, int parity)
   	tcflush(fd, TCIFLUSH);		/* Update the options and do it NOW */
   	if (tcsetattr(fd, TCSANOW, &options) != 0)
 	{
-    	printf("SetupSerial 3\n");
-  		return 1;
+  		printf_debug("SetupSerial 3\n");
+  		return FUNCTION_FAIL;
  	}
-	return 0;
+	return NO_ERROR;
 }
 
 

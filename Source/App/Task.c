@@ -22,6 +22,7 @@
 #include "Net.h"
 #include "Uart.h"
 #include "../Struct2Json/ConfigFile.h"
+#include "../Config.h"
 
 
 
@@ -51,13 +52,13 @@ int TCP_Client2Uart(void)
 	/* 建立管道pipe */
 	if(pipe(uart2TcpPipe) < 0)
 	{
-		printf("uart to tcp pipe error!\n");
-		return -1;
+		printf_debug("uart to tcp pipe error!\n");
+		return FUNCTION_FAIL;
 	}
 	if(pipe(tcp2UartPipe) < 0)
 	{
-		printf("tcp to uart pipe error!\n");
-		return -1;
+		printf_debug("tcp to uart pipe error!\n");
+		return FUNCTION_FAIL;
 	}
 
 	/* 建立连接服务器端的socket，打开串口 */
@@ -70,7 +71,7 @@ int TCP_Client2Uart(void)
 	ret = pthread_create(&tcpReceivePid, NULL, (void*)TCPClientReceivePthread, paramArray[0]);
 	if(0 != ret)
 	{
-		printf("pthread TCP Client Receive create error!\n");
+		printf_debug("pthread TCP Client Receive create error!\n");
 		goto TCP_CLIENT_CLOSE;
 	}
 
@@ -79,7 +80,7 @@ int TCP_Client2Uart(void)
 	ret = pthread_create(&tcpSendtPid, NULL, (void*)TCPClientSendPthread, paramArray[1]);
 	if(0 != ret)
 	{
-		printf("pthread TCP Client Send create error!\n");
+		printf_debug("pthread TCP Client Send create error!\n");
 		goto TCP_CLIENT_CLOSE;
 	}
 
@@ -88,7 +89,7 @@ int TCP_Client2Uart(void)
 	ret = pthread_create(&uartReceivePid, NULL, (void*)UartReceivePthread, paramArray[2]);
 	if(0 != ret)
 	{
-		printf("pthread Uart Receive create error!\n");
+		printf_debug("pthread Uart Receive create error!\n");
 		goto TCP_CLIENT_CLOSE;
 	}
 
@@ -97,7 +98,7 @@ int TCP_Client2Uart(void)
 	ret = pthread_create(&uartSendPid, NULL, (void*)UartSendPthread, paramArray[3]);
 	if(0 != ret)
 	{
-		printf("pthread Uart Send create error!\n");
+		printf_debug("pthread Uart Send create error!\n");
 		goto TCP_CLIENT_CLOSE;
 	}
 
@@ -109,7 +110,7 @@ TCP_CLIENT_CLOSE:
 	close(socketFd);
 	close(uartFd);
 
-	return 0;
+	return NO_ERROR;
 }
 
 
@@ -129,13 +130,13 @@ int TCP_Server2Uart(void)
 	/* 建立管道pipe */
 	if(pipe(uart2TcpPipe) < 0)
 	{
-		printf("uart to tcp pipe error!\n");
-		return -1;
+		printf_debug("uart to tcp pipe error!\n");
+		return FUNCTION_FAIL;
 	}
 	if(pipe(tcp2UartPipe) < 0)
 	{
-		printf("tcp to uart pipe error!\n");
-		return -1;
+		printf_debug("tcp to uart pipe error!\n");
+		return FUNCTION_FAIL;
 	}
 
 	/* 侦听客户端并且连接，建立socket，打开串口 */
@@ -150,7 +151,7 @@ int TCP_Server2Uart(void)
 	ret = pthread_create(&tcpReceivePid, NULL, (void*)TCPServerReceivePthread, paramArray[0]);
 	if(0 != ret)
 	{
-		printf("pthread TCP Server Receive create error!\n");
+		printf_debug("pthread TCP Server Receive create error!\n");
 		goto TCP_SERVER_CLOSE;
 	}
 
@@ -159,7 +160,7 @@ int TCP_Server2Uart(void)
 	ret = pthread_create(&tcpSendtPid, NULL, (void*)TCPServerSendPthread, paramArray[1]);
 	if(0 != ret)
 	{
-		printf("pthread TCP Server Send create error!\n");
+		printf_debug("pthread TCP Server Send create error!\n");
 		goto TCP_SERVER_CLOSE;
 	}
 
@@ -168,7 +169,7 @@ int TCP_Server2Uart(void)
 	ret = pthread_create(&uartReceivePid, NULL, (void*)UartReceivePthread, paramArray[2]);
 	if(0 != ret)
 	{
-		printf("pthread Uart Receive create error!\n");
+		printf_debug("pthread Uart Receive create error!\n");
 		goto TCP_SERVER_CLOSE;
 	}
 
@@ -177,7 +178,7 @@ int TCP_Server2Uart(void)
 	ret = pthread_create(&uartSendPid, NULL, (void*)UartSendPthread, paramArray[3]);
 	if(0 != ret)
 	{
-		printf("pthread Uart Send create error!\n");
+		printf_debug("pthread Uart Send create error!\n");
 		goto TCP_SERVER_CLOSE;
 	}
 
@@ -190,7 +191,7 @@ TCP_SERVER_CLOSE:
 	close(socketFd);
 	close(uartFd);
 
-	return 0;
+	return NO_ERROR;
 }
 
 
@@ -211,13 +212,13 @@ int UDP2Uart(void)
 	/* 建立管道pipe */
 	if(pipe(uart2UdpPipe) < 0)
 	{
-		printf("uart to udp pipe error!\n");
-		return -1;
+		printf_debug("uart to udp pipe error!\n");
+		return FUNCTION_FAIL;
 	}
 	if(pipe(udp2UartPipe) < 0)
 	{
-		printf("udp to uart pipe error!\n");
-		return -1;
+		printf_debug("udp to uart pipe error!\n");
+		return FUNCTION_FAIL;
 	}
 
 	/* 连接UDP并建立socket，打开串口，设置远端配置的IP和端口号 */
@@ -233,7 +234,7 @@ int UDP2Uart(void)
 	ret = pthread_create(&udpReceive, NULL, (void*)UDPReceivePthread, paramArray[0]);
 	if(0 != ret)
 	{
-		printf("pthread UDP Receive create error!\n");
+		printf_debug("pthread UDP Receive create error!\n");
 		goto UDP_CLOSE;
 	}
 
@@ -243,7 +244,7 @@ int UDP2Uart(void)
 	ret = pthread_create(&udpSendtPid, NULL, (void*)UDPSendPthread, paramArray[1]);
 	if(0 != ret)
 	{
-		printf("pthread UDP Send create error!\n");
+		printf_debug("pthread UDP Send create error!\n");
 		goto UDP_CLOSE;
 	}
 
@@ -252,7 +253,7 @@ int UDP2Uart(void)
 	ret = pthread_create(&uartReceive, NULL, (void*)UartReceivePthread, paramArray[2]);
 	if(0 != ret)
 	{
-		printf("pthread Uart Receive create error!\n");
+		printf_debug("pthread Uart Receive create error!\n");
 		goto UDP_CLOSE;
 	}
 
@@ -261,7 +262,7 @@ int UDP2Uart(void)
 	ret = pthread_create(&uartSendPid, NULL, (void*)UartSendPthread, paramArray[3]);
 	if(0 != ret)
 	{
-		printf("pthread Uart Send create error!\n");
+		printf_debug("pthread Uart Send create error!\n");
 		goto UDP_CLOSE;
 	}
 
@@ -273,7 +274,7 @@ UDP_CLOSE:
 	close(socketFd);
 	close(uartFd);
 
-	return 0;
+	return NO_ERROR;
 }
 
 
@@ -298,7 +299,7 @@ static void TCPClientSendPthread(void *param)
         {
             if (send(*socketFd, dataBuffer, dataBytes, 0) == -1)
             {
-                printf("send error！\r\n");
+            	printf_debug("send error！\r\n");
                 continue;
             }
         }
@@ -327,7 +328,7 @@ static void TCPClientReceivePthread(void *param)
         {
             if(write(pipeWriteFd, dataBuffer, dataBytes) == -1)
             {
-                printf("write error！\r\n");
+            	printf_debug("write error！\r\n");
                 continue;
             }
         }
@@ -365,7 +366,7 @@ static void TCPServerSendPthread(void *param)
         {
             if (send(*clientFd, dataBuffer, dataBytes, 0) == -1)
             {
-                printf("send error！\r\n");
+            	printf_debug("send error！\r\n");
                 continue;
             }
         }
@@ -395,7 +396,7 @@ static void TCPServerReceivePthread(void *param)
         {
             if(write(pipeWriteFd, dataBuffer, dataBytes) == -1)
             {
-                printf("write error！\r\n");
+            	printf_debug("write error！\r\n");
                 continue;
             }
         }
@@ -436,7 +437,7 @@ static void UDPSendPthread(void *param)
     	{
 			if (sendto(socketFd, dataBuffer, dataBytes, 0, (struct sockaddr *)remoteAddr, sinSize) == -1)
 			{
-				printf("send error！\r\n");
+				printf_debug("send error！\r\n");
 				continue;
 			}
     	}
@@ -469,7 +470,7 @@ static void UDPReceivePthread(void *param)
             /* 将接收到的数据写入管道 */
         	if(write(pipeWriteFd, dataBuffer, dataBytes) == -1)
         	{
-        		printf("write error！\r\n");
+        		printf_debug("write error！\r\n");
         		continue;
         	}
         }
@@ -500,7 +501,7 @@ static void UartSendPthread(void *param)
     	{
 			if (write(uartFd, dataBuffer, dataBytes) == -1)
 			{
-				printf("write error！\r\n");
+				printf_debug("write error！\r\n");
 				continue;
 			}
     	}
@@ -530,7 +531,7 @@ static void UartReceivePthread(void *param)
 			/* 将接收到的数据写入管道 */
 			if(write(pipeWriteFd, dataBuffer, dataBytes) == -1)
 			{
-				printf("write error！\r\n");
+				printf_debug("write error！\r\n");
 				continue;
 			}
 		}

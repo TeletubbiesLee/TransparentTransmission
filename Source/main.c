@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include "./Struct2Json/JsonFileOperation.h"
 #include "./App/Task.h"
+#include "Config.h"
 
 
 
@@ -27,8 +28,8 @@ int main(int argc, char *argv[])
 {
 	if(argc < 2)
 	{
-		printf("error: too few arguments to program \'%s\'!\n", argv[0]);
-		return -1;
+		printf_debug("error: too few arguments to program \'%s\'!\n", argv[0]);
+		return FEW_ARGUMENTS;
 	}
 	Struct2JsonInit();
 	GetJsonFile();
@@ -47,11 +48,11 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		printf("error: arguments \'%s\' is wrong to program \'%s\'!\n", argv[1], argv[0]);
-		return -1;
+		printf_debug("error: arguments \'%s\' is wrong to program \'%s\'!\n", argv[1], argv[0]);
+		return ERROR_ARGUMENTS;
 	}
 
-	return 0;
+	return NO_ERROR;
 }
 
 
